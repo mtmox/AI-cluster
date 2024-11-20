@@ -1,5 +1,11 @@
 .mcoder-workspace
-*.env
+
 go.*
 *.log
+*.json
+*.env
+
 .git
+.DS_Store
+
+AI-cluster
