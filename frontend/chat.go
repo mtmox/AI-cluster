@@ -10,6 +10,8 @@ import (
 )
 
 var selectedThreadID int = -1
+var currentThreadIndex int = 0
+var threadCounter int = 1
 
 func createChatTab() fyne.CanvasObject {
 	if len(conversations) == 0 {
@@ -43,8 +45,9 @@ func createChatTab() fyne.CanvasObject {
 		} else {
 			selectedConversation = &conversations[id]
 			updateThreadsList(threadsList, selectedConversation.Threads)
+			currentThreadIndex = 0
 			if len(selectedConversation.Threads) > 0 {
-				updateChatOutput(chatOutput, selectedConversation.Threads[0].Messages)
+				updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
 			} else {
 				chatOutput.SetText("")
 			}
@@ -75,6 +78,7 @@ func createChatTab() fyne.CanvasObject {
 			chatOutput.SetText("")
 		} else {
 			selectedThreadID = int(id)
+			currentThreadIndex = int(id)
 			if id < len(selectedConversation.Threads) {
 				updateChatOutput(chatOutput, selectedConversation.Threads[id].Messages)
 			}
@@ -93,48 +97,88 @@ func createChatTab() fyne.CanvasObject {
 		selectedConversation = &conversations[len(conversations)-1]
 		updateThreadsList(threadsList, selectedConversation.Threads)
 		chatOutput.SetText("")
+		currentThreadIndex = 0
 	})
+
+	threadCounterEntry := widget.NewEntry()
+	threadCounterEntry.SetText("1")
 
 	newThreadButton := widget.NewButton("New Thread", func() {
 		if selectedConversation != nil {
-			selectedConversation.ThreadCounter++
-			newThread := Thread{
-				ID:       selectedConversation.ThreadCounter,
-				Messages: []Message{},
+			count, err := strconv.Atoi(threadCounterEntry.Text)
+			if err != nil {
+				count = 1
 			}
-			selectedConversation.Threads = append(selectedConversation.Threads, newThread)
+			for i := 0; i < count; i++ {
+				selectedConversation.ThreadCounter++
+				newThread := Thread{
+					ID:       selectedConversation.ThreadCounter,
+					Messages: []Message{},
+				}
+				selectedConversation.Threads = append(selectedConversation.Threads, newThread)
+			}
 			updateThreadsList(threadsList, selectedConversation.Threads)
 			chatOutput.SetText("")
+			currentThreadIndex = len(selectedConversation.Threads) - 1
 		}
 	})
 
 	copyThreadButton := widget.NewButton("Copy Thread", func() {
 		if selectedConversation == nil || selectedThreadID == -1 {
-			// No conversation or thread selected, do nothing
 			return
 		}
 		if selectedThreadID >= len(selectedConversation.Threads) {
-			// Invalid thread ID, do nothing
 			return
 		}
-		selectedConversation.ThreadCounter++
-		copiedThread := selectedConversation.Threads[selectedThreadID]
-		newThread := Thread{
-			ID:       selectedConversation.ThreadCounter,
-			Messages: make([]Message, len(copiedThread.Messages)),
+		count, err := strconv.Atoi(threadCounterEntry.Text)
+		if err != nil {
+			count = 1
 		}
-		copy(newThread.Messages, copiedThread.Messages)
-		selectedConversation.Threads = append(selectedConversation.Threads, newThread)
+		for i := 0; i < count; i++ {
+			selectedConversation.ThreadCounter++
+			copiedThread := selectedConversation.Threads[selectedThreadID]
+			newThread := Thread{
+				ID:       selectedConversation.ThreadCounter,
+				Messages: make([]Message, len(copiedThread.Messages)),
+			}
+			copy(newThread.Messages, copiedThread.Messages)
+			selectedConversation.Threads = append(selectedConversation.Threads, newThread)
+		}
 		updateThreadsList(threadsList, selectedConversation.Threads)
+		currentThreadIndex = len(selectedConversation.Threads) - 1
 	})
 
-	settingsContainer := container.NewVBox(killButton, newConversationButton, newThreadButton, copyThreadButton)
+	settingsContainer := container.NewVBox(
+		killButton,
+		newConversationButton,
+		container.NewHBox(widget.NewLabel("Thread Count:"), threadCounterEntry),
+		newThreadButton,
+		copyThreadButton,
+	)
 
 	chatOutput = widget.NewMultiLineEntry()
 	chatOutput.Disable()
 
-	leftArrow := widget.NewButton("<", func() {})
-	rightArrow := widget.NewButton(">", func() {})
+	leftArrow := widget.NewButton("<", func() {
+		if selectedConversation != nil && len(selectedConversation.Threads) > 0 {
+			currentThreadIndex--
+			if currentThreadIndex < 0 {
+				currentThreadIndex = len(selectedConversation.Threads) - 1
+			}
+			updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
+			threadsList.Select(currentThreadIndex)
+		}
+	})
+	rightArrow := widget.NewButton(">", func() {
+		if selectedConversation != nil && len(selectedConversation.Threads) > 0 {
+			currentThreadIndex++
+			if currentThreadIndex >= len(selectedConversation.Threads) {
+				currentThreadIndex = 0
+			}
+			updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
+			threadsList.Select(currentThreadIndex)
+		}
+	})
 
 	sendButton := widget.NewButton("Send", func() {
 		sendMessage(messageBar, conversationList, threadsList)
@@ -190,15 +234,13 @@ func sendMessage(messageBar *widget.Entry, conversationList, threadsList *widget
 			}
 			selectedConversation.Threads = append(selectedConversation.Threads, newThread)
 			updateThreadsList(threadsList, selectedConversation.Threads)
+			currentThreadIndex = 0
 		}
 
 		newMessage := Message{Sender: "User", Content: message}
-		if selectedThreadID != -1 && selectedThreadID < len(selectedConversation.Threads) {
-			selectedConversation.Threads[selectedThreadID].Messages = append(selectedConversation.Threads[selectedThreadID].Messages, newMessage)
-			updateChatOutput(chatOutput, selectedConversation.Threads[selectedThreadID].Messages)
-		} else {
-			selectedConversation.Threads[0].Messages = append(selectedConversation.Threads[0].Messages, newMessage)
-			updateChatOutput(chatOutput, selectedConversation.Threads[0].Messages)
+		if currentThreadIndex < len(selectedConversation.Threads) {
+			selectedConversation.Threads[currentThreadIndex].Messages = append(selectedConversation.Threads[currentThreadIndex].Messages, newMessage)
+			updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
 		}
 		messageBar.SetText("")
 	}
