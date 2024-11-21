@@ -12,6 +12,7 @@ import (
 var selectedThreadID int = -1
 var currentThreadIndex int = 0
 var threadCounter int = 1
+var sendToAllThreads bool = false
 
 func createChatTab() fyne.CanvasObject {
 	if len(conversations) == 0 {
@@ -212,6 +213,10 @@ func createChatTab() fyne.CanvasObject {
 		}
 	})
 
+	sendToAllThreadsToggle := widget.NewCheck("Send to All Threads", func(value bool) {
+		sendToAllThreads = value
+	})
+
 	sendButton := widget.NewButton("Send", func() {
 		sendMessage(messageBar, conversationList, threadsList)
 	})
@@ -220,7 +225,7 @@ func createChatTab() fyne.CanvasObject {
 		sendMessage(messageBar, conversationList, threadsList)
 	}
 
-	topContainer := container.NewBorder(nil, nil, nil, sendButton, messageBar)
+	topContainer := container.NewBorder(nil, nil, nil, container.NewHBox(sendToAllThreadsToggle, sendButton), messageBar)
 	
 	conversationsScroll := container.NewVScroll(conversationList)
 	threadsScroll := container.NewVScroll(threadsList)
@@ -270,9 +275,16 @@ func sendMessage(messageBar *widget.Entry, conversationList, threadsList *widget
 		}
 
 		newMessage := Message{Sender: "User", Content: message}
-		if currentThreadIndex < len(selectedConversation.Threads) {
-			selectedConversation.Threads[currentThreadIndex].Messages = append(selectedConversation.Threads[currentThreadIndex].Messages, newMessage)
+		if sendToAllThreads {
+			for i := range selectedConversation.Threads {
+				selectedConversation.Threads[i].Messages = append(selectedConversation.Threads[i].Messages, newMessage)
+			}
 			updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
+		} else {
+			if currentThreadIndex < len(selectedConversation.Threads) {
+				selectedConversation.Threads[currentThreadIndex].Messages = append(selectedConversation.Threads[currentThreadIndex].Messages, newMessage)
+				updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
+			}
 		}
 		messageBar.SetText("")
 	}
