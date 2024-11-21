@@ -41,6 +41,26 @@ else
     echo "Cron job for check_update.py already exists. Skipping."
 fi
 
+echo "Checking cron job..."
+CRON_JOB="* * * * * /opt/homebrew/bin/python3 $HOME/AI-cluster/setup/start_node.py"
+if ! crontab -l 2>/dev/null | grep -q "start_node.py"; then
+    echo "Setting up cron job..."
+    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+    echo "Cron job added."
+else
+    echo "Cron job for start_node.py already exists. Skipping."
+fi
+
+echo "Checking cron job..."
+CRON_JOB="* * * * * /opt/homebrew/bin/python3 $HOME/AI-cluster/setup/stop_node.py"
+if ! crontab -l 2>/dev/null | grep -q "stop_node.py"; then
+    echo "Setting up cron job..."
+    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+    echo "Cron job added."
+else
+    echo "Cron job for stop_node.py already exists. Skipping."
+fi
+
 # Function to create a deploy key for a repository
 create_deploy_key() {
     local repo_name="$1"
