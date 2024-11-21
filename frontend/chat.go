@@ -85,7 +85,38 @@ func createChatTab() fyne.CanvasObject {
 		}
 	}
 
-	killButton := widget.NewButton("Kill", func() {})
+	killToggle := widget.NewRadioGroup([]string{"Conversation", "Thread"}, func(value string) {})
+	killToggle.SetSelected("Conversation")
+
+	killButton := widget.NewButton("Kill", func() {
+		if killToggle.Selected == "Conversation" {
+			if selectedConversation != nil {
+				for i, conv := range conversations {
+					if conv.ID == selectedConversation.ID {
+						conversations = append(conversations[:i], conversations[i+1:]...)
+						break
+					}
+				}
+				updateConversationList(conversationList, conversations)
+				selectedConversation = nil
+				updateThreadsList(threadsList, nil)
+				chatOutput.SetText("")
+			}
+		} else if killToggle.Selected == "Thread" {
+			if selectedConversation != nil && selectedThreadID != -1 {
+				selectedConversation.Threads = append(selectedConversation.Threads[:selectedThreadID], selectedConversation.Threads[selectedThreadID+1:]...)
+				updateThreadsList(threadsList, selectedConversation.Threads)
+				selectedThreadID = -1
+				if len(selectedConversation.Threads) > 0 {
+					currentThreadIndex = 0
+					updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
+				} else {
+					chatOutput.SetText("")
+				}
+			}
+		}
+	})
+
 	newConversationButton := widget.NewButton("New Conversation", func() {
 		newConversation := Conversation{
 			ID:            strconv.Itoa(len(conversations) + 1),
@@ -149,6 +180,7 @@ func createChatTab() fyne.CanvasObject {
 	})
 
 	settingsContainer := container.NewVBox(
+		container.NewHBox(killToggle),
 		killButton,
 		newConversationButton,
 		container.NewHBox(widget.NewLabel("Thread Count:"), threadCounterEntry),
