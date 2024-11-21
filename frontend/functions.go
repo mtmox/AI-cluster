@@ -8,8 +8,9 @@ import (
 )
 
 type Conversation struct {
-	ID      string
-	Threads []Thread
+	ID           string
+	Threads      []Thread
+	ThreadCounter int
 }
 
 type Thread struct {
@@ -33,7 +34,7 @@ func updateConversationList(list *widget.List, conversations []Conversation) {
 func updateThreadsList(list *widget.List, threads []Thread) {
 	list.Length = func() int { return len(threads) }
 	list.UpdateItem = func(id widget.ListItemID, item fyne.CanvasObject) {
-		item.(*widget.Label).SetText("Thread " + strconv.Itoa(threads[id].ID))
+		item.(*widget.Label).SetText(strconv.Itoa(threads[id].ID))
 	}
 	list.Refresh()
 }
