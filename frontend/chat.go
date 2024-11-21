@@ -12,7 +12,7 @@ type Conversation struct {
 }
 
 type Thread struct {
-	ID       string
+	ID       int
 	Messages []Message
 }
 
@@ -29,12 +29,12 @@ func updateConversationList(list *widget.List, conversations []Conversation) {
 	list.Refresh()
 }
 
-func updateThreadsList(list *widget.List, threads []Thread) {
-	list.Length = func() int { return len(threads) }
-	list.UpdateItem = func(id widget.ListItemID, item fyne.CanvasObject) {
-		item.(*widget.Label).SetText(threads[id].ID)
+func updateThreadsList(grid *fyne.Container, threads []Thread) {
+	grid.RemoveAll()
+	for _, thread := range threads {
+		grid.Add(createThreadBox(thread.ID))
 	}
-	list.Refresh()
+	grid.Refresh()
 }
 
 func updateChatOutput(output *widget.Entry, messages []Message) {

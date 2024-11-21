@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"strconv"
 )
 
 func StartFrontend() {
@@ -19,7 +20,7 @@ func StartFrontend() {
 	)
 
 	w.SetContent(tabs)
-	w.Resize(fyne.NewSize(800, 600))
+	w.Resize(fyne.NewSize(1024, 768))
 	w.ShowAndRun()
 }
 
@@ -47,22 +48,38 @@ func createChatTab() fyne.CanvasObject {
 	settingsContainer := container.NewVBox(killButton)
 
 	// Chat output area (Area 5)
-	chatOutput := createChatOutputArea()
+	chatOutput := widget.NewMultiLineEntry()
+	chatOutput.Disable()
+
+	// Navigation arrows
+	leftArrow := widget.NewButton("<", func() {})
+	rightArrow := widget.NewButton(">", func() {})
+
+	// Send button
+	sendButton := widget.NewButton("Send", func() {
+		message := messageBar.Text
+		if message != "" {
+			appendMessage(chatOutput, "User", message)
+			messageBar.SetText("")
+		}
+	})
 
 	// Layout
-	leftSide := container.NewHSplit(conversationList, threadsList)
-	rightSide := container.NewHSplit(chatOutput, settingsContainer)
-	content := container.NewBorder(nil, messageBar, leftSide, rightSide)
+	topContainer := container.NewBorder(nil, nil, nil, sendButton, messageBar)
+	leftSide := container.NewVSplit(conversationList, threadsList)
+	rightSide := settingsContainer
+	middleContent := container.NewBorder(nil, nil, leftArrow, rightArrow, chatOutput)
+	content := container.NewBorder(topContainer, nil, leftSide, rightSide, middleContent)
 
 	return content
 }
 
-func createChatOutputArea() fyne.CanvasObject {
-	output := widget.NewMultiLineEntry()
-	output.Disable()
+func createThreadBox(number int) fyne.CanvasObject {
+	return widget.NewLabel(strconv.Itoa(number))
+}
 
-	leftArrow := widget.NewButton("<", func() {})
-	rightArrow := widget.NewButton(">", func() {})
-
-	return container.NewBorder(nil, nil, leftArrow, rightArrow, output)
+func appendMessage(output *widget.Entry, sender, content string) {
+	currentText := output.Text
+	newMessage := sender + ": " + content + "\n"
+	output.SetText(currentText + newMessage)
 }
