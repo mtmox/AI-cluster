@@ -4,8 +4,11 @@ go.*
 *.log
 *.json
 *.env
+*.conf
 
 .git
 .DS_Store
 
 AI-cluster
+
+system-prompts.go
