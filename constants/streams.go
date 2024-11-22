@@ -20,22 +20,12 @@ type StreamConfig struct {
 // Streams contains the configurations for all streams
 var Streams = []StreamConfig{
 	{
-		Name: "incoming",
+		Name: "messages",
 		Subjects: []string{
-			"chat.>",
-			"generate.>",
-		},
-		Retention: nats.WorkQueuePolicy,
-	},
-
-
-
-
-	{
-		Name: "outgoing",
-		Subjects: []string{
-			"chat.>",
-			"generate.>",
+			"in.chat.>",
+			"in.generate.>",
+			"out.chat.>",
+			"out.generate.>",
 		},
 		Retention: nats.WorkQueuePolicy,
 	},
@@ -46,7 +36,7 @@ var Streams = []StreamConfig{
 	{
 		Name: "nodes",
 		Subjects: []string{
-			"config.>",
+			"config.sync.models",
 		},
 		Retention: nats.WorkQueuePolicy,
 	},

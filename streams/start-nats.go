@@ -13,7 +13,7 @@ import (
 
 func StartNats() {
 	// Execute start.sh script
-	cmd := exec.Command("./messageStream/start.sh")
+	cmd := exec.Command("./streams/start.sh")
 	err := cmd.Run()
 	if err != nil {
 		log.Fatalf("Failed to execute start.sh: %v", err)

@@ -49,6 +49,37 @@ func DurablePull(js nats.JetStreamContext, streamName string, subject string, du
 	return subscription, nil
 }
 
+func EphemeralPull(js nats.JetStreamContext, streamName string, subject string, callback func(msg *nats.Msg)) (*nats.Subscription, error) {
+	// Use pull-based subscription with an ephemeral consumer
+	subscription, err := js.PullSubscribe(subject, "", nats.BindStream(streamName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ephemeral pull subscription: %v", err)
+	}
+
+	// Start a goroutine to fetch messages
+	go func() {
+		for {
+			messages, err := subscription.Fetch(1, nats.MaxWait(1*time.Second))
+			if err != nil {
+				if err == nats.ErrTimeout {
+					log.Printf("No more messages for subject %s, stopping consumer", subject)
+					subscription.Unsubscribe()
+					return
+				}
+				log.Printf("Error fetching message: %v", err)
+				continue
+			}
+			for _, msg := range messages {
+				callback(msg)
+			}
+		}
+	}()
+
+	log.Printf("Ephemeral consumer setup complete for subject: %s", subject)
+
+	return subscription, nil
+}
+
 // SetupPushConsumer sets up a push-based consumer for the given stream and subject
 func DurablePush(js nats.JetStreamContext, streamName string, subject string, durable string, callback func(msg *nats.Msg)) (*nats.Subscription, error) {
 	
@@ -77,37 +108,6 @@ func DurablePush(js nats.JetStreamContext, streamName string, subject string, du
 	}
 
 	log.Printf("Push-based consumer setup complete for subject: %s", subject)
-
-	return subscription, nil
-}
-
-func EphemeralPull(js nats.JetStreamContext, streamName string, subject string, callback func(msg *nats.Msg)) (*nats.Subscription, error) {
-	// Use pull-based subscription with an ephemeral consumer
-	subscription, err := js.PullSubscribe(subject, "", nats.BindStream(streamName))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create ephemeral pull subscription: %v", err)
-	}
-
-	// Start a goroutine to fetch messages
-	go func() {
-		for {
-			messages, err := subscription.Fetch(1, nats.MaxWait(1*time.Second))
-			if err != nil {
-				if err == nats.ErrTimeout {
-					log.Printf("No more messages for subject %s, stopping consumer", subject)
-					subscription.Unsubscribe()
-					return
-				}
-				log.Printf("Error fetching message: %v", err)
-				continue
-			}
-			for _, msg := range messages {
-				callback(msg)
-			}
-		}
-	}()
-
-	log.Printf("Ephemeral consumer setup complete for subject: %s", subject)
 
 	return subscription, nil
 }
@@ -160,3 +160,10 @@ func hash(subject string) string {
 	// Take the first 16 characters of the hex string to keep it shorter
 	return hashHex[:16]
 }
+
+
+
+
+
+
+
