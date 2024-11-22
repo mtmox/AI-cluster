@@ -42,6 +42,45 @@ func main() {
 	}
 }
 
+func runFrontend(logger *log.Logger) {
+	// Connect to NATS server and get the JetStream context
+	js, err := streams.ConnectToNats()
+	if err != nil {
+		logger.Fatalf("Failed to connect to NATS: %v", err)
+	}
+
+	// Sync models without storing the return value
+	_, err = syncModels(js, logger)
+	if err != nil {
+		logger.Fatalf("Error syncing models: %v", err)
+	}
+
+	logger.Println("Starting frontend instance")
+	frontend.StartFrontend(js, logger)
+}
+
+func runBackend(logger *log.Logger) {
+	// Connect to NATS server and get the JetStream context
+	js, err := streams.ConnectToNats()
+	if err != nil {
+		logger.Fatalf("Failed to connect to NATS: %v", err)
+	}
+
+	// Sync models and print the list
+	modelNames, err := syncModels(js, logger)
+	if err != nil {
+		logger.Fatalf("Error syncing models: %v", err)
+	}
+
+	fmt.Println("Downloaded models:")
+	for _, model := range modelNames {
+		fmt.Printf("- %s\n", model)
+	}
+
+	logger.Println("Starting backend instance")
+	backend.StartBackend()
+}
+
 func syncModels(js nats.JetStreamContext, logger *log.Logger) ([]string, error) {
 	// Query and write models
 	err := constants.QueryAndWriteModels()
@@ -85,41 +124,58 @@ func syncModels(js nats.JetStreamContext, logger *log.Logger) ([]string, error) 
 	return modelNames, nil
 }
 
-func runFrontend(logger *log.Logger) {
-	// Connect to NATS server and get the JetStream context
-	js, err := streams.ConnectToNats()
-	if err != nil {
-		logger.Fatalf("Failed to connect to NATS: %v", err)
-	}
 
-	// Sync models without storing the return value
-	_, err = syncModels(js, logger)
-	if err != nil {
-		logger.Fatalf("Error syncing models: %v", err)
-	}
 
-	logger.Println("Starting frontend instance")
-	frontend.StartFrontend()
-}
 
-func runBackend(logger *log.Logger) {
-	// Connect to NATS server and get the JetStream context
-	js, err := streams.ConnectToNats()
-	if err != nil {
-		logger.Fatalf("Failed to connect to NATS: %v", err)
-	}
 
-	// Sync models and print the list
-	modelNames, err := syncModels(js, logger)
-	if err != nil {
-		logger.Fatalf("Error syncing models: %v", err)
-	}
 
-	fmt.Println("Downloaded models:")
-	for _, model := range modelNames {
-		fmt.Printf("- %s\n", model)
-	}
 
-	logger.Println("Starting backend instance")
-	backend.StartBackend()
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
