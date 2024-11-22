@@ -9,32 +9,39 @@ if [ ! -f "$GO_BINARY" ]; then
     exit 1
 fi
 
-# Find the process ID of the running GO binary
-PID=$(pgrep -f "$GO_BINARY")
+# Find the process IDs of the running GO binary instances
+PIDS=$(pgrep -f "$GO_BINARY")
 
-if [ -z "$PID" ]; then
-    echo "GO binary is not currently running."
+if [ -z "$PIDS" ]; then
+    echo "No GO binary instances are currently running."
     exit 0
 fi
 
-# Attempt to stop the GO binary gracefully
-echo "Stopping GO binary (PID: $PID)..."
-kill "$PID"
+# Attempt to stop the GO binary instances gracefully
+echo "Stopping GO binary instances..."
+for PID in $PIDS; do
+    echo "Stopping instance with PID: $PID"
+    kill "$PID"
+done
 
-# Wait for up to 10 seconds for the process to terminate
+# Wait for up to 10 seconds for the processes to terminate
 for i in {1..10}; do
-    if ! ps -p "$PID" > /dev/null; then
-        echo "GO binary stopped successfully."
+    if ! pgrep -f "$GO_BINARY" > /dev/null; then
+        echo "All GO binary instances stopped successfully."
         exit 0
     fi
     sleep 1
 done
 
-# If the process is still running, force kill it
-if ps -p "$PID" > /dev/null; then
-    echo "GO binary did not stop gracefully. Forcing termination..."
-    kill -9 "$PID"
-    echo "GO binary forcefully terminated."
+# If any processes are still running, force kill them
+REMAINING_PIDS=$(pgrep -f "$GO_BINARY")
+if [ -n "$REMAINING_PIDS" ]; then
+    echo "Some GO binary instances did not stop gracefully. Forcing termination..."
+    for PID in $REMAINING_PIDS; do
+        echo "Forcefully terminating instance with PID: $PID"
+        kill -9 "$PID"
+    done
+    echo "All GO binary instances forcefully terminated."
 else
-    echo "GO binary stopped successfully."
+    echo "All GO binary instances stopped successfully."
 fi

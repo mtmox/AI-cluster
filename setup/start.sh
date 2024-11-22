@@ -15,6 +15,20 @@ if [ ! -x "$GO_BINARY" ]; then
     chmod +x "$GO_BINARY"
 fi
 
-# Start the GO binary
-echo "Starting GO binary..."
-"$GO_BINARY"
+# Set default instance type to backend
+INSTANCE_TYPE="backend"
+
+# Check for the instance type flag
+if [ "$1" == "-frontend" ]; then
+    INSTANCE_TYPE="frontend"
+elif [ "$1" == "-backend" ] || [ -z "$1" ]; then
+    INSTANCE_TYPE="backend"
+else
+    echo "Error: Invalid argument. Use -frontend for frontend instance, or no argument (or -backend) for backend instance."
+    echo "Usage: $0 [-frontend|-backend]"
+    exit 1
+fi
+
+# Start the GO binary with the appropriate flag
+echo "Starting GO binary as $INSTANCE_TYPE instance..."
+"$GO_BINARY" "-$INSTANCE_TYPE"

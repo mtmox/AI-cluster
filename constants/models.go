@@ -71,18 +71,27 @@ func QueryAndWriteModels() error {
 	return nil
 }
 
-func ReadModelField(inputFile, modelName, fieldName string) (string, error) {
+func ReadModelsInfo(inputFile string) (*ModelsResponse, error) {
 	// Read the JSON file
 	jsonData, err := ioutil.ReadFile(inputFile)
 	if err != nil {
-		return "", fmt.Errorf("error reading file: %v", err)
+		return nil, fmt.Errorf("error reading file: %v", err)
 	}
 
 	// Parse the JSON data
 	var modelsResp ModelsResponse
 	err = json.Unmarshal(jsonData, &modelsResp)
 	if err != nil {
-		return "", fmt.Errorf("error parsing JSON: %v", err)
+		return nil, fmt.Errorf("error parsing JSON: %v", err)
+	}
+
+	return &modelsResp, nil
+}
+
+func ReadModelField(inputFile, modelName, fieldName string) (string, error) {
+	modelsResp, err := ReadModelsInfo(inputFile)
+	if err != nil {
+		return "", err
 	}
 
 	// Find the specified model and field
