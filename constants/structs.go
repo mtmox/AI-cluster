@@ -4,5 +4,5 @@ package constants
 
 
 type ConfigSyncModels struct {
-	NAME  string  `json:"name"`
+	Name  string  `json:"name"`
 }

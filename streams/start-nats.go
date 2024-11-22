@@ -19,7 +19,16 @@ func StartNats() {
 		log.Fatalf("Failed to execute start.sh: %v", err)
 	}
 
-	log.Println("NATS server started successfully")
+	log.Println("NATS server STARTED successfully")
+}
+
+func StopNats() {
+	cmd := exec.Command("./streams/stop.sh")
+	err := cmd.Run()
+	if err != nil {
+		log.Fatalf("Failed to execute stop.sh: %v", err)
+	}
+	log.Println("Nats server STOPPED successfully")
 }
 
 func ConnectToNats() (nats.JetStreamContext, error) {

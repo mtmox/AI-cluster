@@ -13,6 +13,7 @@ var selectedThreadID int = -1
 var currentThreadIndex int = 0
 var threadCounter int = 1
 var sendToAllThreads bool = false
+var modelSelector *widget.Select
 
 func createChatTab() fyne.CanvasObject {
 	if len(conversations) == 0 {
@@ -29,6 +30,26 @@ func createChatTab() fyne.CanvasObject {
 
 	messageBar := widget.NewEntry()
 	messageBar.SetPlaceHolder("Type your message here...")
+
+	modelSelector = widget.NewSelect([]string{}, func(selected string) {
+		// Handle model selection here if needed
+		if selected != "" {
+			// You can use the selected model name here
+		}
+	})
+	
+	// Function to update the model selector options
+	updateModelSelector := func() {
+		var names []string
+		for name := range modelNames {
+			names = append(names, name)
+		}
+		modelSelector.Options = names
+		modelSelector.Refresh()
+	}
+	
+	// Initial update of the selector
+	updateModelSelector()
 
 	conversationList := widget.NewList(
 		func() int { return len(conversations) },
@@ -225,7 +246,13 @@ func createChatTab() fyne.CanvasObject {
 		sendMessage(messageBar, conversationList, threadsList)
 	}
 
-	topContainer := container.NewBorder(nil, nil, nil, container.NewHBox(sendToAllThreadsToggle, sendButton), messageBar)
+	topContainer := container.NewBorder(
+		nil, 
+		nil, 
+		modelSelector, // Add the selector to the left of the send button
+		container.NewHBox(sendToAllThreadsToggle, sendButton), 
+		messageBar,
+	)
 	
 	conversationsScroll := container.NewVScroll(conversationList)
 	threadsScroll := container.NewVScroll(threadsList)

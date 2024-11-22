@@ -35,7 +35,7 @@ func DurablePull(js nats.JetStreamContext, streamName string, subject string, du
 		for {
 			messages, err := subscription.Fetch(1)
 			if err != nil {
-				log.Printf("Error fetching message: %v", err)
+				// log.Printf("Error fetching message: %v", err)
 				continue
 			}
 			for _, msg := range messages {

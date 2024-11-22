@@ -56,3 +56,15 @@ func appendMessage(output *widget.Entry, sender, content string) {
 	newMessage := sender + ": " + content + "\n"
 	output.SetText(currentText + newMessage)
 }
+
+// Add this function to update the model selector from outside
+func updateModelSelector() {
+	if modelSelector != nil {
+		var names []string
+		for name := range modelNames {
+			names = append(names, name)
+		}
+		modelSelector.Options = names
+		modelSelector.Refresh()
+	}
+}

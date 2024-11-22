@@ -15,8 +15,10 @@ import (
 
 	"github.com/mtmox/AI-cluster/streams"
 	"github.com/mtmox/AI-cluster/constants"
-
 )
+
+// Add this global variable
+var modelNames = make(map[string]bool)
 
 var conversations []Conversation
 var selectedConversation *Conversation
@@ -37,7 +39,6 @@ func StartFrontend(js nats.JetStreamContext, logger *log.Logger) {
 	w.Resize(fyne.NewSize(1024, 768))
 	configSyncModels(js, logger)
 	w.ShowAndRun()
-
 }
 
 func configSyncModels(js nats.JetStreamContext, logger *log.Logger) error {
@@ -46,11 +47,25 @@ func configSyncModels(js nats.JetStreamContext, logger *log.Logger) error {
 	
 	_, err := streams.DurablePull(js, "nodes", subject, durable, func(msg *nats.Msg) {
 		populateModels(msg, logger)
-		logger.Printf("Model: %s", b)
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to set up consumer to populate models: %s: %v", subject, err)
 	}
 	logger.Printf("Consumer set up for subject: %s", subject)
 	return nil
+}
+
+func populateModels(msg *nats.Msg, logger *log.Logger) {
+    var model constants.ConfigSyncModels
+	err := json.Unmarshal(msg.Data, &model)
+	if err != nil {
+		logger.Printf("Error unmarshaling model data: %v", err)
+		return
+	}
+	
+	if !modelNames[model.Name] {
+		modelNames[model.Name] = true
+		logger.Printf("Added new model: %s", model.Name)
+		updateModelSelector()
+	}
 }

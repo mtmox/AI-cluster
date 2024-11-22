@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"encoding/json"
 
 	"github.com/nats-io/nats.go"
 	"github.com/mtmox/AI-cluster/constants"
@@ -57,6 +56,7 @@ func runFrontend(logger *log.Logger) {
 
 	logger.Println("Starting frontend instance")
 	frontend.StartFrontend(js, logger)
+	streams.StopNats()
 }
 
 func runBackend(logger *log.Logger) {
@@ -66,15 +66,10 @@ func runBackend(logger *log.Logger) {
 		logger.Fatalf("Failed to connect to NATS: %v", err)
 	}
 
-	// Sync models and print the list
-	modelNames, err := syncModels(js, logger)
+	// Sync models without storing the return value
+	_, err = syncModels(js, logger)
 	if err != nil {
 		logger.Fatalf("Error syncing models: %v", err)
-	}
-
-	fmt.Println("Downloaded models:")
-	for _, model := range modelNames {
-		fmt.Printf("- %s\n", model)
 	}
 
 	logger.Println("Starting backend instance")
@@ -102,18 +97,12 @@ func syncModels(js nats.JetStreamContext, logger *log.Logger) ([]string, error) 
 		modelNames = append(modelNames, model.Name)
 
 		msg := constants.ConfigSyncModels{
-			NAME: model.Name,
-		}
-
-		// Serialize the message to JSON
-		data, err := json.Marshal(msg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal CPU message: %v", err)
+			Name: model.Name,
 		}
 
 		// Publish modelNames to NATS
 		subject := "config.sync.models"
-		err = streams.PublishToNats(js, subject, data)
+		err = streams.PublishToNats(js, subject, msg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to publish model message for %s: %v", model.Name, err)
 		}
@@ -123,59 +112,5 @@ func syncModels(js nats.JetStreamContext, logger *log.Logger) ([]string, error) 
 
 	return modelNames, nil
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
