@@ -10,11 +10,14 @@ from datetime import datetime
 import os
 import socket
 
-# Configure logging
+# Get the directory where the script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Configure logging with absolute path
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    filename='stop_node.log'
+    filename=os.path.join(SCRIPT_DIR, 'stop_node.log')
 )
 
 # Configuration

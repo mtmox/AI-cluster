@@ -10,12 +10,16 @@ from datetime import datetime
 import os
 import socket
 
-# Configure logging
+# Get the directory where the script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Configure logging with absolute path
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    filename='check_update.log'
+    filename=os.path.join(SCRIPT_DIR, 'check_update.log')
 )
+
 
 # Configuration
 SERVER_IP = '192.168.1.16'  # Replace with your server's hostname
