@@ -1,0 +1,35 @@
+1. Work on setup dir so that when i run ySETUP.py i can choose not to add cron
+   jobs. The reason is that you dont want the cron job to execute on the computer
+   that youre going to be using as the -frontend flag.
+
+2. Add in system-prompts to the front end so i can pick which system prompt I 
+   want to send off with the payload.
+
+3. Work on collecting all information from front end and then packaging it for
+   the "in.chat.>" subject in the messages stream. All of our messages will go 
+   through a collection function from the front end before they reach a subject.
+   This collection will seperate them and divide them into the correct subjects.
+   From here we will have a piece
+   of code which determines which LLM we want to then go to. We are going to add
+   in GPT, gemini, and anthropic later. We are starting with just Ollama first.
+   Make code that first figures out which LLM to route to, then hands it off to
+   the correct function which then takes our payload and structures it correctly
+   for the LLM.
+
+   Once we receive a response we then need to send it to "out.chat.>" subject in
+   the messages stream, where it will then be picked up by a consumer and added
+   to the correct threads in the correct conversation.
+
+4. We next need to create a way for the nodes to load balance themselves. I need 
+   to think about this a bit first. The "in.chat.>" message structure is important
+   because we dont want nodes consuming messages they cant process and then having 
+   to republish them. The subject names should be ordered in a way where nodes 
+   know before hand if they can even do any of the work within that subject. For 
+   instance, we first need to convert every model name into a hash, otherwise we 
+   are going to run into trouble with decimals and colons. Once we have created a 
+   mapping each node will be able to take the models it has on its local drive
+   and compare the hash the name generates against the hash in the subject line 
+   "in.chat.hash.conversation.thread.>" where the conversation and thread arent 
+   important the ".>" would go after hash. We will need to make durable pull 
+   each node will spawn a durable pull consumer on every combination of 
+   "in.chat.hash.>" that it has a corresponding local model for.
