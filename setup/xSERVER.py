@@ -4,6 +4,7 @@ import json
 import threading
 import time
 import os
+from termcolor import colored
 
 # Configuration
 HOST = '0.0.0.0'
@@ -19,25 +20,28 @@ class UpdateHandler(BaseHTTPRequestHandler):
         global update_available, start_available, stop_available
 
         if self.path == '/cluster_update':
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            response = json.dumps({"update_available": update_available})
-            self.wfile.write(response.encode())
+            self.handle_response('update_available', update_available)
         elif self.path == '/start_node':
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            response = json.dumps({"start_available": start_available})
-            self.wfile.write(response.encode())
+            self.handle_response('start_available', start_available)
         elif self.path == '/stop_node':
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            response = json.dumps({"stop_available": stop_available})
-            self.wfile.write(response.encode())
+            self.handle_response('stop_available', stop_available)
         else:
             self.send_error(404)
+
+    def handle_response(self, flag_name, flag_value):
+        if flag_value:
+            # If flag is true, send 200 OK
+            self.send_response(200)
+            print(colored(f"200 - {self.path} - Action allowed", 'green'))
+        else:
+            # If flag is false, send 204 No Content
+            self.send_response(204)
+            print(colored(f"204 - {self.path} - Action skipped", 'red'))
+            
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        response = json.dumps({flag_name: flag_value})
+        self.wfile.write(response.encode())
 
 def run_server():
     server_address = (HOST, PORT)

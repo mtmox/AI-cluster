@@ -1,3 +1,4 @@
+
 #!/opt/homebrew/bin/python3
 
 import urllib.request
@@ -40,7 +41,8 @@ def check_for_update():
                     run_update_script()
                 else:
                     logging.info("Update flag is false, skipping update.")
-                    return
+            elif response.getcode() == 204:
+                logging.info("Update check skipped - no action required")
             else:
                 logging.error(f"Error checking update status: HTTP {response.getcode()}")
     except urllib.error.URLError as e:

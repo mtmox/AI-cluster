@@ -1,3 +1,4 @@
+
 #!/opt/homebrew/bin/python3
 
 import urllib.request
@@ -39,7 +40,8 @@ def check_stop_flag():
                     run_stop_script()
                 else:
                     logging.info("Stop flag is false, skipping stop.")
-                    return
+            elif response.getcode() == 204:
+                logging.info("Stop check skipped - no action required")
             else:
                 logging.error(f"Error checking stop status: HTTP {response.getcode()}")
     except urllib.error.URLError as e:

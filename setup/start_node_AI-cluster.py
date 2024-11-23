@@ -1,3 +1,4 @@
+
 #!/opt/homebrew/bin/python3
 
 import urllib.request
@@ -39,7 +40,8 @@ def check_start_flag():
                     run_start_script()
                 else:
                     logging.info("Start flag is false, skipping start.")
-                    return
+            elif response.getcode() == 204:
+                logging.info("Start check skipped - no action required")
             else:
                 logging.error(f"Error checking start status: HTTP {response.getcode()}")
     except urllib.error.URLError as e:
