@@ -46,49 +46,4 @@ update_repo() {
     unset GIT_SSH_COMMAND
 }
 
-update_home_paths() {
-    local REPO_PATH="$1"
-    local CURRENT_HOME=$(eval echo ~$USER)
-    local MASTER_HOME="/Users/ui3u"
-
-    echo "Updating home paths in $REPO_PATH..."
-    cd "$REPO_PATH" || error_exit "Failed to change directory to $REPO_PATH"
-
-    # Find all files (excluding .git directory) and replace paths
-    find . -type f -not -path "./.git/*" | while read -r file; do
-        if grep -q "$MASTER_HOME" "$file"; then
-            sed -i.bak "s|$MASTER_HOME|$CURRENT_HOME|g" "$file"
-            if cmp -s "$file" "$file.bak"; then
-                rm "$file.bak"
-            else
-                echo "Modified: $file"
-            fi
-        fi
-    done
-
-    echo "Home paths updated in $REPO_PATH"
-}
-
-# Ensure the script is run from the correct directory
-cd "$(dirname "$0")" || error_exit "Failed to change to script directory"
-
-# List of repositories to update
-REPOS="AI-cluster:$HOME/AI-cluster"
-
-# Loop through each repository and update it
-echo "$REPOS" | tr ' ' '\n' | while IFS=':' read -r repo_name repo_path; do
-    update_repo "$repo_name" "$repo_path"
-done
-
-#### Fix the alteranting MASTER_HOME updating, not correct in mini nodes.
-
-# Update home paths only in the AI-cluster repository
-update_home_paths "$HOME/AI-cluster"
-
-# Remove all .bak files in all repositories
-echo "$REPOS" | tr ' ' '\n' | while IFS=':' read -r _ repo_path; do
-    echo "Removing .bak files in $repo_path..."
-    find "$repo_path" -name "*.bak" -type f -delete
-done
-
 echo "All updates completed successfully!"
