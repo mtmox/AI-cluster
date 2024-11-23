@@ -20,6 +20,7 @@ logging.basicConfig(
     filename=os.path.join(SCRIPT_DIR, 'check_update.log')
 )
 
+
 # Configuration
 SERVER_IP = '192.168.1.16'  # Replace with your server's hostname
 SERVER_URL = f'http://{SERVER_IP}:8090'
@@ -61,27 +62,10 @@ def run_update_script():
 
 def run_build_script():
     try:
-        # Set up the environment variables needed for the build script
-        env = os.environ.copy()
-        env['PATH'] = '/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:' + env.get('PATH', '')
-        env['GOPATH'] = os.path.expanduser('~/go')
-        env['GOROOT'] = '/opt/homebrew/opt/go/libexec'  # Adjust this path if needed
-
-        # Run the build script with the enhanced environment
-        result = subprocess.run(
-            ["bash", UPDATE_BUILD],
-            check=True,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
+        subprocess.run(["bash", UPDATE_BUILD], check=True)
         logging.info("Build script executed successfully")
-        logging.debug(f"Build output: {result.stdout}")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error executing build script: {e}")
-        logging.error(f"Build script stderr: {e.stderr}")
-        logging.error(f"Build script stdout: {e.stdout}")
 
 if __name__ == "__main__":
     if not is_server():
