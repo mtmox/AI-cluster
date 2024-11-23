@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set PATH to include Go
+export PATH="/opt/homebrew/bin:$PATH"
+
 # Function to find the AI-cluster directory
 find_ai_cluster_dir() {
     local current_dir=$(pwd)
@@ -26,6 +29,11 @@ cd "$ai_cluster_dir" || {
     echo "Error: Unable to change to AI-cluster directory"
     exit 1
 }
+
+# Print debugging information
+echo "Current directory: $(pwd)"
+echo "Go version: $(go version)"
+echo "Go path: $(which go)"
 
 # Run go build
 if ! go build .; then
