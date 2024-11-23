@@ -33,3 +33,18 @@
    important the ".>" would go after hash. We will need to make durable pull 
    each node will spawn a durable pull consumer on every combination of 
    "in.chat.hash.>" that it has a corresponding local model for.
+
+----------------------------------------------------------------------------------
+
+5. Im not sure how but i need to make a standard error function. If we get an error 
+   we need to call this function and then handle the error by writing it to a data-
+   base. Down the line we can actually specialize some AI's with our specific code-
+   base and when we get an error we can pass it to the AI's and see how they would 
+   resolve the issue. (I could fork the repo and make an AI controlled repo, ill need
+   to familiarize myself with docker cause youll want a standard env where the AI's
+   can pass changes to so they can be tested. IDK this part will be more difficult
+   but its a possibility later.)
+
+6. Need to make storage databases to catch .log file output from nats, and we also 
+   should be logging all program errors to a nats subject which we then write to a
+   database. This will help figure out where problems are.   
