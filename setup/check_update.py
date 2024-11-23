@@ -7,11 +7,28 @@ import subprocess
 import logging
 from datetime import datetime
 import os
+import socket
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='check_update.log'
+)
 
 # Configuration
-SERVER_URL = 'http://ui3u.local:8090'  # Replace with your server's IP and port
+SERVER_IP = '192.168.1.16'  # Replace with your server's hostname
+SERVER_URL = f'http://{SERVER_IP}:8090'
 UPDATE_CHECK = os.path.join(os.environ['HOME'], 'AI-cluster', 'setup', 'update_repo.sh')
 UPDATE_BUILD = os.path.join(os.environ['HOME'], 'AI-cluster', 'setup', 'build.sh')
+
+def is_server():
+    try:
+        host_ip = socket.gethostbyname(socket.gethostname())
+        server_ip = socket.gethostbyname(SERVER_IP)
+        return host_ip == server_ip
+    except:
+        return False
 
 def check_for_update():
     try:
@@ -19,12 +36,13 @@ def check_for_update():
             if response.getcode() == 200:
                 data = json.loads(response.read().decode())
                 if data.get('update_available'):
-                    logging.info("Update available. Running update script...")
+                    logging.info("Update flag is true, running update script...")
                     run_update_script()
                 else:
-                    logging.info("No update available.")
+                    logging.info("Update flag is false, skipping update.")
+                    return
             else:
-                logging.error(f"Error checking for update: HTTP {response.getcode()}")
+                logging.error(f"Error checking update status: HTTP {response.getcode()}")
     except urllib.error.URLError as e:
         logging.error(f"Error connecting to server: {e}")
 
@@ -44,5 +62,7 @@ def run_build_script():
         logging.error(f"Error executing build script: {e}")
 
 if __name__ == "__main__":
-    logging.info(f"Running update check at {datetime.now()}")
-    check_for_update()
+    if not is_server():
+        check_for_update()
+    else:
+        logging.info("Script running on server, skipping execution")
