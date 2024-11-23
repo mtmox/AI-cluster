@@ -46,4 +46,22 @@ update_repo() {
     unset GIT_SSH_COMMAND
 }
 
+# Ensure the script is run from the correct directory
+cd "$(dirname "$0")" || error_exit "Failed to change to script directory"
+
+# List of repositories to update
+REPOS="AI-cluster:$HOME/AI-cluster"
+
+# Loop through each repository and update it
+echo "$REPOS" | tr ' ' '\n' | while IFS=':' read -r repo_name repo_path; do
+    update_repo "$repo_name" "$repo_path"
+done
+
+# Remove all .bak files in all repositories
+echo "$REPOS" | tr ' ' '\n' | while IFS=':' read -r _ repo_path; do
+    echo "Removing .bak files in $repo_path..."
+    find "$repo_path" -name "*.bak" -type f -delete
+done
+
 echo "All updates completed successfully!"
+
