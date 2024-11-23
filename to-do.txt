@@ -5,6 +5,8 @@
    turned on and you will start running a -backend instance flag along side 
    your -frontend instance.
 
+   ***Done***
+
 2. Add in system-prompts to the front end so i can pick which system prompt I 
    want to send off with the payload.
 
@@ -51,3 +53,8 @@
 6. Need to make storage databases to catch .log file output from nats, and we also 
    should be logging all program errors to a nats subject which we then write to a
    database. This will help figure out where problems are.   
+
+----------------------------------------------------------------------------------
+
+- Order models in dropdown by alphabetical.
+- Fix problems with messages persisting after ive consumed them.
