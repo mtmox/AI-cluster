@@ -1,6 +1,9 @@
 1. Work on setup dir so that when i run ySETUP.py i can choose not to add cron
    jobs. The reason is that you dont want the cron job to execute on the computer
-   that youre going to be using as the -frontend flag.
+   that youre going to be using as the -frontend flag. It will mess up the logic
+   because then your frontend computer will respond when the xSERVER.py file is
+   turned on and you will start running a -backend instance flag along side 
+   your -frontend instance.
 
 2. Add in system-prompts to the front end so i can pick which system prompt I 
    want to send off with the payload.

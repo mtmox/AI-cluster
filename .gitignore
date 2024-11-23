@@ -1,6 +1,5 @@
 .mcoder-workspace
 
-go.*
 *.log
 *.json
 *.env
