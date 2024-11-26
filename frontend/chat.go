@@ -7,6 +7,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/layout"
 	"strconv"
+	
+	"github.com/mtmox/AI-cluster/constants"
 )
 
 var selectedThreadID int = -1
@@ -14,6 +16,7 @@ var currentThreadIndex int = 0
 var threadCounter int = 1
 var sendToAllThreads bool = false
 var modelSelector *widget.Select
+var promptSelector *widget.Select
 
 func createChatTab() fyne.CanvasObject {
 	if len(conversations) == 0 {
@@ -35,6 +38,19 @@ func createChatTab() fyne.CanvasObject {
 		// Handle model selection here if needed
 		if selected != "" {
 			// You can use the selected model name here
+		}
+	})
+	
+	// Create the prompt selector
+	var promptNames []string
+	for name := range constants.SystemPrompts {
+		promptNames = append(promptNames, name)
+	}
+	promptSelector = widget.NewSelect(promptNames, func(selected string) {
+		// Handle prompt selection here if needed
+		if selected != "" {
+			// You can use the selected prompt here
+			// constants.SystemPrompts[selected] will give you the prompt content
 		}
 	})
 	
@@ -246,12 +262,21 @@ func createChatTab() fyne.CanvasObject {
 		sendMessage(messageBar, conversationList, threadsList)
 	}
 
-	topContainer := container.NewBorder(
-		nil, 
-		nil, 
-		modelSelector, // Add the selector to the left of the send button
-		container.NewHBox(sendToAllThreadsToggle, sendButton), 
-		messageBar,
+	// Create a container for both selectors
+	selectorsContainer := container.NewHBox(
+		container.NewHBox(widget.NewLabel("Model:"), modelSelector),
+		container.NewHBox(widget.NewLabel("Prompt:"), promptSelector),
+	)
+
+	topContainer := container.NewVBox(
+		selectorsContainer,
+		container.NewBorder(
+			nil, 
+			nil, 
+			nil,
+			container.NewHBox(sendToAllThreadsToggle, sendButton), 
+			messageBar,
+		),
 	)
 	
 	conversationsScroll := container.NewVScroll(conversationList)
@@ -316,6 +341,3 @@ func sendMessage(messageBar *widget.Entry, conversationList, threadsList *widget
 		messageBar.SetText("")
 	}
 }
-
-// Setup a receiveMessage function which creates a consumer and listens to the NATS
-// queue to consume messages and then populate them in the right spots.
