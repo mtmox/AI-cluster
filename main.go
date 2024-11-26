@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/nats-io/nats.go"
+	
 	"github.com/mtmox/AI-cluster/constants"
 	"github.com/mtmox/AI-cluster/streams"
 	"github.com/mtmox/AI-cluster/frontend"
@@ -112,5 +113,3 @@ func syncModels(js nats.JetStreamContext, logger *log.Logger) ([]string, error) 
 
 	return modelNames, nil
 }
-
-

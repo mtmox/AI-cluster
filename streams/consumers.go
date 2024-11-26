@@ -40,6 +40,10 @@ func DurablePull(js nats.JetStreamContext, streamName string, subject string, du
 			}
 			for _, msg := range messages {
 				callback(msg)
+				// Acknowledge the message after processing
+				if err := msg.Ack(); err != nil {
+					log.Printf("Error acknowledging message: %v", err)
+				}
 			}
 		}
 	}()

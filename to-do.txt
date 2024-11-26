@@ -5,7 +5,7 @@
    turned on and you will start running a -backend instance flag along side 
    your -frontend instance.
 
-   ***Done***
+   ***DONE***
 
 2. Add in system-prompts to the front end so i can pick which system prompt I 
    want to send off with the payload.
@@ -57,4 +57,4 @@
 ----------------------------------------------------------------------------------
 
 - Order models in dropdown by alphabetical.
-- Fix problems with messages persisting after ive consumed them.
+- Fix problems with messages persisting after ive consumed them. ***DONE***
