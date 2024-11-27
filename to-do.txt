@@ -5,10 +5,10 @@
    turned on and you will start running a -backend instance flag along side 
    your -frontend instance.
 
-   ***DONE***
+   ***[DONE]***
 
 2. Add in system-prompts to the front end so i can pick which system prompt I 
-   want to send off with the payload. ***DONE***
+   want to send off with the payload. ***[DONE]***
 
 3. Work on collecting all information from front end and then packaging it for
    the "in.chat.>" subject in the messages stream. All of our messages will go 
@@ -24,8 +24,7 @@
    Once we receive a response we then need to send it to "out.chat.>" subject in
    the messages stream, where it will then be picked up by a consumer and added
    to the correct threads in the correct conversation.
-
-   ***(PROBLEM)*** - We need to figure out how to include the system prompt into
+   ***[PROBLEM]*** - We need to figure out how to include the system prompt into
    the message. Right now its not being included in the chat endpoint queries or 
    we have to make a new modelfile for each system prompt and downloaded model
    combination.
@@ -44,7 +43,7 @@
    each node will spawn a durable pull consumer on every combination of 
    "in.chat.hash.>" that it has a corresponding local model for.
 
-   ***(SOLUTION)*** -create a 10ms lag so that each node can only pull 1 msg at a
+   ***[SOLUTION]*** -create a 10ms lag so that each node can only pull 1 msg at a
    time from the queue and after each pull it has to wait 10ms.
 ----------------------------------------------------------------------------------
 
@@ -52,10 +51,10 @@
    we need to call this function and then handle the error by writing it to a data-
    base. Down the line we can actually specialize some AI's with our specific code-
    base and when we get an error we can pass it to the AI's and see how they would 
-   resolve the issue. (I could fork the repo and make an AI controlled repo, ill need
+   resolve the issue. I could fork the repo and make an AI controlled repo, ill need
    to familiarize myself with docker cause youll want a standard env where the AI's
    can pass changes to so they can be tested. IDK this part will be more difficult
-   but its a possibility later.)
+   but its a possibility later.
 
 6. Need to make storage databases to catch .log file output from nats, and we also 
    should be logging all program errors to a nats subject which we then write to a
@@ -64,4 +63,10 @@
 ----------------------------------------------------------------------------------
 
 - Order models in dropdown by alphabetical.
-- Fix problems with messages persisting after ive consumed them. ***DONE***
+- Fix problems with messages persisting after ive consumed them. ***[DONE]***
+
+- I need to set up consumers unique consumers for each node following criteria of
+  step 4. The consumers will pull messages based on headers from the queue. The 
+  header will be what model is required to process the message, if the node has 
+  that downloaded model then it can pull and process the message.
+  ***[IMMEDIATE]***
