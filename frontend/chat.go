@@ -2,11 +2,15 @@
 package frontend
 
 import (
+	"strconv"
+	"log"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/layout"
-	"strconv"
+
+	"github.com/nats-io/nats.go"
 	
 	"github.com/mtmox/AI-cluster/constants"
 )
@@ -18,7 +22,7 @@ var sendToAllThreads bool = false
 var modelSelector *widget.Select
 var promptSelector *widget.Select
 
-func createChatTab() fyne.CanvasObject {
+func createChatTab(js nats.JetStreamContext) fyne.CanvasObject {
 	if len(conversations) == 0 {
 		conversations = append(conversations, Conversation{
 			ID:            "1",
@@ -255,11 +259,11 @@ func createChatTab() fyne.CanvasObject {
 	})
 
 	sendButton := widget.NewButton("Send", func() {
-		sendMessage(messageBar, conversationList, threadsList)
+		sendMessage(js, messageBar, conversationList, threadsList)
 	})
 
 	messageBar.OnSubmitted = func(s string) {
-		sendMessage(messageBar, conversationList, threadsList)
+		sendMessage(js, messageBar, conversationList, threadsList)
 	}
 
 	// Create a container for both selectors
@@ -301,43 +305,87 @@ func createChatTab() fyne.CanvasObject {
 	return content
 }
 
-func sendMessage(messageBar *widget.Entry, conversationList, threadsList *widget.List) {
-	message := messageBar.Text
-	if message != "" {
-		if selectedConversation == nil {
-			newConversation := Conversation{
-				ID:            strconv.Itoa(len(conversations) + 1),
-				Threads:       []Thread{},
-				ThreadCounter: 0,
-			}
-			conversations = append(conversations, newConversation)
-			selectedConversation = &conversations[len(conversations)-1]
-			updateConversationList(conversationList, conversations)
-		}
+func sendMessage(js nats.JetStreamContext, messageBar *widget.Entry, conversationList, threadsList *widget.List) {
+    message := messageBar.Text
+    if message != "" {
+        if selectedConversation == nil {
+            newConversation := Conversation{
+                ID:            strconv.Itoa(len(conversations) + 1),
+                Threads:       []Thread{},
+                ThreadCounter: 0,
+            }
+            conversations = append(conversations, newConversation)
+            selectedConversation = &conversations[len(conversations)-1]
+            updateConversationList(conversationList, conversations)
+        }
 
-		if len(selectedConversation.Threads) == 0 {
-			selectedConversation.ThreadCounter++
-			newThread := Thread{
-				ID:       selectedConversation.ThreadCounter,
-				Messages: []Message{},
-			}
-			selectedConversation.Threads = append(selectedConversation.Threads, newThread)
-			updateThreadsList(threadsList, selectedConversation.Threads)
-			currentThreadIndex = 0
-		}
+        if len(selectedConversation.Threads) == 0 {
+            selectedConversation.ThreadCounter++
+            newThread := Thread{
+                ID:       selectedConversation.ThreadCounter,
+                Messages: []Message{},
+            }
+            selectedConversation.Threads = append(selectedConversation.Threads, newThread)
+            updateThreadsList(threadsList, selectedConversation.Threads)
+            currentThreadIndex = 0
+        }
 
-		newMessage := Message{Sender: "User", Content: message}
-		if sendToAllThreads {
-			for i := range selectedConversation.Threads {
-				selectedConversation.Threads[i].Messages = append(selectedConversation.Threads[i].Messages, newMessage)
-			}
-			updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
-		} else {
-			if currentThreadIndex < len(selectedConversation.Threads) {
-				selectedConversation.Threads[currentThreadIndex].Messages = append(selectedConversation.Threads[currentThreadIndex].Messages, newMessage)
-				updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
-			}
-		}
-		messageBar.SetText("")
-	}
+        newMessage := Message{Sender: "User", Content: message}
+        if sendToAllThreads {
+            for i := range selectedConversation.Threads {
+                selectedConversation.Threads[i].Messages = append(selectedConversation.Threads[i].Messages, newMessage)
+                
+                // Send message to NATS for each thread
+                if modelSelector.Selected != "" && promptSelector.Selected != "" {
+                    natsMsg, err := formatMessageForNATS(
+                        selectedConversation,
+                        selectedConversation.Threads[i],
+                        modelSelector.Selected,
+                        promptSelector.Selected,
+                    )
+                    if err != nil {
+                        log.Printf("Error formatting message for NATS: %v", err)
+                        continue
+                    }
+                    
+                    if js != nil {
+                        err = sendMessageToNATS(js, natsMsg)
+                        if err != nil {
+                            log.Printf("Error sending message to NATS: %v", err)
+                        }
+                    }
+                }
+            }
+            updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
+        } else {
+            if currentThreadIndex < len(selectedConversation.Threads) {
+                selectedConversation.Threads[currentThreadIndex].Messages = append(
+                    selectedConversation.Threads[currentThreadIndex].Messages,
+                    newMessage,
+                )
+                
+                // Send message to NATS for current thread
+                if modelSelector.Selected != "" && promptSelector.Selected != "" {
+                    natsMsg, err := formatMessageForNATS(
+                        selectedConversation,
+                        selectedConversation.Threads[currentThreadIndex],
+                        modelSelector.Selected,
+                        promptSelector.Selected,
+                    )
+                    if err != nil {
+                        log.Printf("Error formatting message for NATS: %v", err)
+                    } else if js != nil {
+                        err = sendMessageToNATS(js, natsMsg)
+                        if err != nil {
+                            log.Printf("Error sending message to NATS: %v", err)
+                        }
+                    }
+                }
+                
+                updateChatOutput(chatOutput, selectedConversation.Threads[currentThreadIndex].Messages)
+            }
+        }
+        messageBar.SetText("")
+    }
 }
+

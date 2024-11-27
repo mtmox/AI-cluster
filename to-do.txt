@@ -8,7 +8,7 @@
    ***DONE***
 
 2. Add in system-prompts to the front end so i can pick which system prompt I 
-   want to send off with the payload.
+   want to send off with the payload. ***DONE***
 
 3. Work on collecting all information from front end and then packaging it for
    the "in.chat.>" subject in the messages stream. All of our messages will go 
@@ -25,6 +25,11 @@
    the messages stream, where it will then be picked up by a consumer and added
    to the correct threads in the correct conversation.
 
+   ***(PROBLEM)*** - We need to figure out how to include the system prompt into
+   the message. Right now its not being included in the chat endpoint queries or 
+   we have to make a new modelfile for each system prompt and downloaded model
+   combination.
+
 4. We next need to create a way for the nodes to load balance themselves. I need 
    to think about this a bit first. The "in.chat.>" message structure is important
    because we dont want nodes consuming messages they cant process and then having 
@@ -39,6 +44,8 @@
    each node will spawn a durable pull consumer on every combination of 
    "in.chat.hash.>" that it has a corresponding local model for.
 
+   ***(SOLUTION)*** -create a 10ms lag so that each node can only pull 1 msg at a
+   time from the queue and after each pull it has to wait 10ms.
 ----------------------------------------------------------------------------------
 
 5. Im not sure how but i need to make a standard error function. If we get an error 

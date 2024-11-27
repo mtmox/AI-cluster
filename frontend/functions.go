@@ -32,6 +32,15 @@ type Message struct {
 	Content string
 }
 
+// NATSMessage represents the format we'll send to the NATS queue
+type NATSMessage struct {
+	ConversationID string    `json:"conversation_id"`
+	ThreadID       int       `json:"thread_id"`
+	Model         string     `json:"model"`
+	SystemPrompt  string     `json:"system_prompt"`
+	Messages      []Message  `json:"messages"`
+}
+
 func updateConversationList(list *widget.List, conversations []Conversation) {
 	list.Length = func() int { return len(conversations) }
 	list.UpdateItem = func(id widget.ListItemID, item fyne.CanvasObject) {
@@ -105,4 +114,47 @@ func populateModels(msg *nats.Msg, logger *log.Logger) {
 		logger.Printf("Added new model: %s", model.Name)
 		updateModelSelector()
 	}
+}
+
+func formatMessageForNATS(conv *Conversation, thread Thread, model, promptName string) (*NATSMessage, error) {
+	if conv == nil {
+		return nil, fmt.Errorf("conversation cannot be nil")
+	}
+
+	// Get the system prompt content
+	systemPrompt, exists := constants.SystemPrompts[promptName]
+	if !exists {
+		return nil, fmt.Errorf("system prompt %s not found", promptName)
+	}
+
+	natsMsg := &NATSMessage{
+		ConversationID: conv.ID,
+		ThreadID:       thread.ID,
+		Model:         model,
+		SystemPrompt:  systemPrompt,
+		Messages:      thread.Messages,
+	}
+
+	return natsMsg, nil
+}
+
+func sendMessageToNATS(js nats.JetStreamContext, msg *NATSMessage) error {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("error marshaling message: %v", err)
+	}
+
+	// Send to NATS subject (you can modify the subject as needed)
+	subject := fmt.Sprintf("in.chat.%s.%d", msg.ConversationID, msg.ThreadID)
+	
+	// Create proper NATS header
+	header := make(nats.Header)
+	header.Set("model", msg.Model)
+	
+	err = streams.PublishToNatsWithHeader(js, subject, data, header)
+	if err != nil {
+		return fmt.Errorf("error publishing to NATS: %v", err)
+	}
+
+	return nil
 }

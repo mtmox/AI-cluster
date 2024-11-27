@@ -26,7 +26,7 @@ func StartFrontend(js nats.JetStreamContext, logger *log.Logger) {
 
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Home", widget.NewLabel("Home Tab Content")),
-		container.NewTabItem("Chat", createChatTab()),
+		container.NewTabItem("Chat", createChatTab(js)),
 		container.NewTabItem("Generate", widget.NewLabel("Generate Tab Content")),
 	)
 

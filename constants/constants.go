@@ -14,6 +14,8 @@ const (
 
 	// ListModelsEndpoint is the endpoint for listing available models
 	ListModelsEndpoint = OllamaURL + "/api/tags"
+	ChatEndpoint = OllamaURL + "/api/chat"
+	GenerateEndpoint = OllamaURL + "/api/generate"
 )
 
 var (
