@@ -146,7 +146,7 @@ func DurableGroupPull(
 				} else {
 					// If this consumer can't process the message, release it back to the stream
 					// with a small delay to prevent tight loops
-					if err := msg.NakWithDelay(100 * time.Millisecond); err != nil {
+					if err := msg.NakWithDelay(500 * time.Millisecond); err != nil {
 						log.Printf("Error releasing message: %v", err)
 					}
 				}
