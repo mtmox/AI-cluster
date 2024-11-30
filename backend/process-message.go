@@ -2,13 +2,10 @@
 package backend
 
 import (
-	// "fmt"
 	"log"
+	"time"
 
 	"github.com/nats-io/nats.go"
-
-	// "github.com/mtmox/AI-cluster/streams"
-	// "github.com/mtmox/AI-cluster/node"
 )
 
 func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
@@ -17,34 +14,13 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 	consumerGroup := "message_processors"
 	subject := "in.chat.>"
 
-	// Setup message handler
-	messageHandler := func(msg *nats.Msg) {
-		// Print all headers
-		if msg.Header != nil {
-			logger.Println("Message Headers:")
-			for key, values := range msg.Header {
-				for _, value := range values {
-					logger.Printf("Header - %s: %s", key, value)
-				}
-			}
-			logger.Printf("Message Data: %s", string(msg.Data))
-		} else {
-			logger.Printf("Received message without headers: %s", string(msg.Data))
-		}
-
-		// Acknowledge the message
-		if err := msg.Ack(); err != nil {
-			logger.Printf("Failed to acknowledge message: %v", err)
-		}
-	}
-
 	// Create consumer configuration
 	consumerConfig := &nats.ConsumerConfig{
 		Durable:       consumerGroup,
-		DeliverGroup: consumerGroup,
+		DeliverGroup:  consumerGroup,
 		DeliverPolicy: nats.DeliverAllPolicy,
-		AckPolicy:    nats.AckExplicitPolicy,
-		MaxDeliver:   -1, // Unlimited redeliveries
+		AckPolicy:     nats.AckExplicitPolicy,
+		MaxDeliver:    -1, // Unlimited redeliveries
 	}
 
 	// Create or get the consumer
@@ -56,22 +32,49 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 		}
 	}
 
-	// Subscribe to the consumer group
-	sub, err := js.QueueSubscribe(
+	// Create pull subscription
+	sub, err := js.PullSubscribe(
 		subject,
 		consumerGroup,
-		messageHandler,
 		nats.Durable(consumerGroup),
-		nats.ManualAck(),
 		nats.BindStream(streamName),
 	)
 	if err != nil {
-		logger.Fatalf("Failed to subscribe to consumer group: %v", err)
+		logger.Fatalf("Failed to create pull subscription: %v", err)
 	}
-
-	// Keep the subscription active
 	defer sub.Unsubscribe()
 
-	// Keep the process running
-	// select {}
+	// Process messages in a loop
+	for {
+		// Fetch messages (batch size of 10, wait up to 10 ms)
+		msgs, err := sub.Fetch(1, nats.MaxWait(time.Millisecond))
+		if err != nil {
+			if err == nats.ErrTimeout {
+				continue // No messages available, continue polling
+			}
+			logger.Printf("Error fetching messages: %v", err)
+			continue
+		}
+
+		// Process received messages
+		for _, msg := range msgs {
+			// Print all headers
+			if msg.Header != nil {
+				logger.Println("Message Headers:")
+				for key, values := range msg.Header {
+					for _, value := range values {
+						logger.Printf("Header - %s: %s", key, value)
+					}
+				}
+				logger.Printf("Message Data: %s", string(msg.Data))
+			} else {
+				logger.Printf("Received message without headers: %s", string(msg.Data))
+			}
+
+			// Acknowledge the message
+			if err := msg.Ack(); err != nil {
+				logger.Printf("Failed to acknowledge message: %v", err)
+			}
+		}
+	}
 }
