@@ -11,4 +11,6 @@ import (
 func StartBackend(js nats.JetStreamContext, logger *log.Logger) {
 	fmt.Printf("Started Backend")
 	ProcessMessage(js, logger)
+
+	select{}
 }
