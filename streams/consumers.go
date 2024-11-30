@@ -84,6 +84,72 @@ func EphemeralPull(js nats.JetStreamContext, streamName string, subject string, 
 	return subscription, nil
 }
 
+// DurableGroupPull creates a durable queue group consumer that can be shared across multiple instances
+func DurableGroupPull(
+	js nats.JetStreamContext,
+	streamName string,
+	subject string,
+	durableName string,
+	queueGroup string,
+	callback func(msg *nats.Msg),
+) (*nats.Subscription, error) {
+	// Create consumer configuration with queue group
+	consumerConfig := &nats.ConsumerConfig{
+		Durable:       durableName,
+		DeliverGroup:  queueGroup,        // Enable queue group delivery
+		AckPolicy:     nats.AckExplicitPolicy,
+		FilterSubject: subject,
+		DeliverPolicy: nats.DeliverAllPolicy,
+		MaxDeliver:    -1, // Unlimited redeliveries
+	}
+
+	// Create or get the consumer
+	consumer, err := js.ConsumerInfo(streamName, durableName)
+	if consumer == nil {
+		_, err = js.AddConsumer(streamName, consumerConfig)
+		if err != nil && err != nats.ErrConsumerNameAlreadyInUse {
+			return nil, fmt.Errorf("failed to add consumer: %v", err)
+		}
+	}
+
+	// Create pull subscription with queue group
+	subscription, err := js.PullSubscribe(
+		subject,
+		queueGroup,
+		nats.BindStream(streamName),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pull subscription: %v", err)
+	}
+
+	// Start a goroutine to fetch and process messages
+	go func() {
+		for {
+			messages, err := subscription.Fetch(1, nats.MaxWait(10*time.Millisecond))
+			if err != nil {
+				if err != nats.ErrTimeout {
+					log.Printf("Error fetching message: %v", err)
+				}
+				continue
+			}
+
+			for _, msg := range messages {
+				// Process the message using the callback
+				callback(msg)
+				
+				// Acknowledge the message after processing
+				if err := msg.Ack(); err != nil {
+					log.Printf("Error acknowledging message: %v", err)
+				}
+			}
+		}
+	}()
+
+	log.Printf("Queue group consumer setup complete for subject: %s, queue group: %s", subject, queueGroup)
+
+	return subscription, nil
+}
+
 // SetupPushConsumer sets up a push-based consumer for the given stream and subject
 func DurablePush(js nats.JetStreamContext, streamName string, subject string, durable string, callback func(msg *nats.Msg)) (*nats.Subscription, error) {
 	
