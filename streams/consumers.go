@@ -126,7 +126,7 @@ func DurableGroupPull(
 	// Start a goroutine to fetch and process messages
 	go func() {
 		for {
-			messages, err := subscription.Fetch(1, nats.MaxWait(100*time.Millisecond))
+			messages, err := subscription.Fetch(1, nats.MaxWait(250*time.Millisecond))
 			if err != nil {
 				if err != nats.ErrTimeout {
 					log.Printf("Error fetching message: %v", err)

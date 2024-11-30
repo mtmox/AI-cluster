@@ -25,7 +25,6 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 	messageHandler := func(msg *nats.Msg) bool {
 		// Print all headers
 		if msg.Header != nil {
-			logger.Println("Message Headers:")
 			for key, values := range msg.Header {
 				for _, value := range values {
 					logger.Printf("Header - %s: %s", key, value)
