@@ -4,6 +4,7 @@ package constants
 // SystemPrompts holds all available system prompts
 var SystemPrompts = map[string]string{
 	"Golang Expert": GolangExpert,
+	"General Purpose": GeneralPurpose,
 	// Add more system prompts as needed
 }
 
@@ -25,3 +26,9 @@ Here is the complete file:
 4. Code should be functional.
 
 </system instructions>`
+
+const GeneralPurpose = `
+Your purpose it to answer questions in a way that leads the user to an applicable solution
+for the problem they are facing. You are to provide detailed responses about how to 
+resolve the problems.
+`
