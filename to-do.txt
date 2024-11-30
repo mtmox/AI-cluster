@@ -19,7 +19,7 @@
    in GPT, gemini, and anthropic later. We are starting with just Ollama first.
    Make code that first figures out which LLM to route to, then hands it off to
    the correct function which then takes our payload and structures it correctly
-   for the LLM.
+   for the LLM. ***[DONE]***
 
    Once we receive a response we then need to send it to "out.chat.>" subject in
    the messages stream, where it will then be picked up by a consumer and added
