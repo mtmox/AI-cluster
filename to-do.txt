@@ -64,6 +64,9 @@
 
 - Order models in dropdown by alphabetical.
 - Fix problems with messages persisting after ive consumed them. ***[DONE]***
+- Fix GUI message history, just use right terms so i dont have to convert later
+  on in the pipeline.
+- I dont think the system prompt is correctly being loaded into the chat history.
 
 - I need to set up consumers unique consumers for each node following criteria of
   step 4. The consumers will pull messages based on headers from the queue. The 
