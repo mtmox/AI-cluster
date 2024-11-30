@@ -5,18 +5,24 @@ import (
 	"log"
 
 	"github.com/nats-io/nats.go"
-
 	"github.com/mtmox/AI-cluster/streams"
+	"github.com/mtmox/AI-cluster/constants"
 )
 
 func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
-	// Define stream name and subjects
 	streamName := "messages"
 	consumerGroup := "message_processors"
 	subject := "in.chat.>"
 
-	// Define message handler callback
-	messageHandler := func(msg *nats.Msg) {
+	// Get models information from the file
+	modelsInfo, err := constants.ReadModelsInfo(constants.ModelsOutputFile)
+	if err != nil {
+		logger.Printf("Failed to read models info: %v", err)
+		return
+	}
+
+	// Modified message handler that returns bool
+	messageHandler := func(msg *nats.Msg) bool {
 		// Print all headers
 		if msg.Header != nil {
 			logger.Println("Message Headers:")
@@ -25,14 +31,27 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 					logger.Printf("Header - %s: %s", key, value)
 				}
 			}
-			logger.Printf("Message Data: %s", string(msg.Data))
-		} else {
-			logger.Printf("Received message without headers: %s", string(msg.Data))
+			
+			// Check if this consumer can handle the model specified in the header
+			if modelName := msg.Header.Get("model"); modelName != "" {
+				// Check if the model exists in the models file
+				for _, model := range modelsInfo.Models {
+					if model.Name == modelName {
+						logger.Printf("Processing message for model: %s", modelName)
+						return true
+					}
+				}
+				logger.Printf("Model %s not found in models file", modelName)
+				return false
+			}
 		}
+		
+		logger.Printf("Message without model header: %s", string(msg.Data))
+		return false
 	}
 
 	// Set up durable pull subscription with queue group
-	_, err := streams.DurableGroupPull(
+	_, err = streams.DurableGroupPull(
 		js,
 		streamName,
 		subject,

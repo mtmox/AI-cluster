@@ -84,23 +84,24 @@ func EphemeralPull(js nats.JetStreamContext, streamName string, subject string, 
 	return subscription, nil
 }
 
-// DurableGroupPull creates a durable queue group consumer that can be shared across multiple instances
+// DurableGroupPull creates a durable queue group consumer that allows all consumers to read headers
+// but only process messages they're capable of handling
 func DurableGroupPull(
 	js nats.JetStreamContext,
 	streamName string,
 	subject string,
 	durableName string,
 	queueGroup string,
-	callback func(msg *nats.Msg),
+	callback func(msg *nats.Msg) bool, // Modified to return bool indicating if message should be processed
 ) (*nats.Subscription, error) {
-	// Create consumer configuration with queue group
+	// Create consumer configuration
 	consumerConfig := &nats.ConsumerConfig{
 		Durable:       durableName,
-		DeliverGroup:  queueGroup,        // Enable queue group delivery
+		DeliverGroup:  queueGroup,
 		AckPolicy:     nats.AckExplicitPolicy,
 		FilterSubject: subject,
 		DeliverPolicy: nats.DeliverAllPolicy,
-		MaxDeliver:    -1, // Unlimited redeliveries
+		MaxDeliver:    -1,
 	}
 
 	// Create or get the consumer
@@ -134,12 +135,20 @@ func DurableGroupPull(
 			}
 
 			for _, msg := range messages {
-				// Process the message using the callback
-				callback(msg)
+				// Call callback to check if this consumer should process the message
+				shouldProcess := callback(msg)
 				
-				// Acknowledge the message after processing
-				if err := msg.Ack(); err != nil {
-					log.Printf("Error acknowledging message: %v", err)
+				if shouldProcess {
+					// Process the message
+					if err := msg.Ack(); err != nil {
+						log.Printf("Error acknowledging message: %v", err)
+					}
+				} else {
+					// If this consumer can't process the message, release it back to the stream
+					// with a small delay to prevent tight loops
+					if err := msg.NakWithDelay(100 * time.Millisecond); err != nil {
+						log.Printf("Error releasing message: %v", err)
+					}
 				}
 			}
 		}
