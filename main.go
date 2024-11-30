@@ -74,7 +74,7 @@ func runBackend(logger *log.Logger) {
 	}
 
 	logger.Println("Starting backend instance")
-	backend.StartBackend()
+	backend.StartBackend(js, logger)
 }
 
 func syncModels(js nats.JetStreamContext, logger *log.Logger) ([]string, error) {

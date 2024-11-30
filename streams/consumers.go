@@ -33,7 +33,7 @@ func DurablePull(js nats.JetStreamContext, streamName string, subject string, du
 	// Start a goroutine to fetch messages
 	go func() {
 		for {
-			messages, err := subscription.Fetch(1)
+			messages, err := subscription.Fetch(1, nats.MaxWait(10*time.Millisecond))
 			if err != nil {
 				// log.Printf("Error fetching message: %v", err)
 				continue

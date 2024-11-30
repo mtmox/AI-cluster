@@ -3,8 +3,11 @@ package backend
 
 import (
 	"fmt"
+	"log"
+
+	"github.com/nats-io/nats.go"
 )
 
-func StartBackend() {
+func StartBackend(js nats.JetStreamContext, logger *log.Logger) {
 	fmt.Printf("Started Backend")
 }
