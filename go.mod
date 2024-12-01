@@ -4,6 +4,7 @@ go 1.22.5
 
 require (
 	fyne.io/fyne/v2 v2.5.2
+	github.com/fatih/color v1.7.0
 	github.com/nats-io/nats.go v1.37.0
 	github.com/shirou/gopsutil/v3 v3.24.5
 )
@@ -28,6 +29,8 @@ require (
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
+	github.com/mattn/go-colorable v0.0.9 // indirect
+	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.4.0 // indirect

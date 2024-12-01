@@ -16,6 +16,7 @@ const (
 	ListModelsEndpoint = OllamaURL + "/api/tags"
 	ChatEndpoint = OllamaURL + "/api/chat"
 	GenerateEndpoint = OllamaURL + "/api/generate"
+	LoadedModels = OllamaURL + "/api/ps"
 )
 
 var (

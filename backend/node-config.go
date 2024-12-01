@@ -72,3 +72,5 @@ func nodeConfig() error {
 	fmt.Println("Ollama will restart automatically after being stopped.")
 	return nil
 }
+
+

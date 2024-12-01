@@ -73,3 +73,11 @@
   header will be what model is required to process the message, if the node has 
   that downloaded model then it can pull and process the message.
   ***[IMMEDIATE]***
+
+- Make code to make waiting cue for loading models, if a model is in memory and we
+  have another model we need to load we should unload the unused model, the reason
+  we have to do this is we are only going to allow 2 models at a time to be loaded
+  into memory and were going to enforce it above ollamas exection layer so we will
+  need to manually unload models that arent being used ONLY IF we have another 
+  request to process that needs a different model. Otherwise ollama is set to unload
+  the model manually after a default amount of time.

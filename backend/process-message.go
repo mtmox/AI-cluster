@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/fatih/color"
 	"github.com/nats-io/nats.go"
 	"github.com/mtmox/AI-cluster/streams"
 	"github.com/mtmox/AI-cluster/constants"
@@ -44,6 +45,13 @@ type IncomingMessage struct {
 	SystemPrompt   string        `json:"system_prompt"`
 	Messages       []ChatMessage `json:"messages"`
 }
+
+// Initialize color functions
+var (
+	incomingColor = color.New(color.FgCyan).SprintFunc()
+	responseColor = color.New(color.FgGreen).SprintFunc()
+	idColor       = color.New(color.FgYellow).SprintFunc()
+)
 
 func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 	// First create the node config file
@@ -92,15 +100,19 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 				for _, model := range modelsInfo.Models {
 					if model.Name == modelName {
 						logger.Printf("Processing message for model: %s", modelName)
-						logger.Printf("Incoming Message Data: %s", string(msg.Data))
+						logger.Printf(incomingColor("Incoming Message Data: %s"), string(msg.Data))
 						
 						// Process the message with the LLM
-						response, err := sendToLLM(msg.Data, logger)
+						response, convID, threadID, err := sendToLLM(msg.Data, logger)
 						if err != nil {
 							logger.Printf("Error processing message with LLM: %v", err)
 							return false
 						}
-						logger.Printf("LLM Response: %s", response)
+						logger.Printf("%s [ConvID: %s, ThreadID: %d] %s", 
+							idColor("Response"),
+							idColor(convID),
+							idColor(threadID),
+							responseColor(response))
 						return true
 					}
 				}
@@ -127,15 +139,19 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 	}
 }
 
-func sendToLLM(messageData []byte, logger *log.Logger) (string, error) {
+func sendToLLM(messageData []byte, logger *log.Logger) (string, string, int, error) {
 	// Parse the incoming message
 	var incomingMsg IncomingMessage
 	if err := json.Unmarshal(messageData, &incomingMsg); err != nil {
-		return "", fmt.Errorf("failed to unmarshal message data: %v", err)
+		return "", "", 0, fmt.Errorf("failed to unmarshal message data: %v", err)
 	}
 
 	// Log the parsed incoming message
-	logger.Printf("Parsed Incoming Message: %+v", incomingMsg)
+	logger.Printf("%s [ConvID: %s, ThreadID: %d] %+v", 
+		idColor("Parsed Incoming Message:"),
+		idColor(incomingMsg.ConversationID),
+		idColor(incomingMsg.ThreadID),
+		incomingMsg)
 
 	// Prepare the chat messages
 	messages := make([]ChatMessage, 0)
@@ -171,7 +187,7 @@ func sendToLLM(messageData []byte, logger *log.Logger) (string, error) {
 	// Convert the request to JSON
 	requestBody, err := json.Marshal(chatRequest)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal chat request: %v", err)
+		return "", "", 0, fmt.Errorf("failed to marshal chat request: %v", err)
 	}
 
 	// Log the request being sent to Ollama
@@ -180,29 +196,23 @@ func sendToLLM(messageData []byte, logger *log.Logger) (string, error) {
 	// Make the HTTP request to Ollama
 	resp, err := http.Post(constants.ChatEndpoint, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
-		return "", fmt.Errorf("failed to send request to Ollama: %v", err)
+		return "", "", 0, fmt.Errorf("failed to send request to Ollama: %v", err)
 	}
 	defer resp.Body.Close()
 
 	// Read the response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response body: %v", err)
+		return "", "", 0, fmt.Errorf("failed to read response body: %v", err)
 	}
-
-	// Log the raw response from Ollama
-	logger.Printf("Raw response from Ollama: %s", string(body))
 
 	// Parse the response
 	var chatResponse ChatResponse
 	if err := json.Unmarshal(body, &chatResponse); err != nil {
-		return "", fmt.Errorf("failed to unmarshal response: %v", err)
+		return "", "", 0, fmt.Errorf("failed to unmarshal response: %v", err)
 	}
 
-	// Log the parsed response
-	logger.Printf("Parsed Ollama Response: %+v", chatResponse)
-
-	return chatResponse.Message.Content, nil
+	return chatResponse.Message.Content, incomingMsg.ConversationID, incomingMsg.ThreadID, nil
 }
 
 // convertSenderToRole converts the Sender field to the appropriate role
