@@ -61,14 +61,10 @@
 
 ----------------------------------------------------------------------------------
 
-- Order models in dropdown by alphabetical.
-
 - Fix problems with messages persisting after ive consumed them. ***[DONE]***
 
 - Fix GUI message history, just use right terms so i dont have to convert later
   on in the pipeline. ***[DONE]***
-
-- I dont think the system prompt is correctly being loaded into the chat history.
 
 - I need to set up consumers unique consumers for each node following criteria of
   step 4. The consumers will pull messages based on headers from the queue. The 
@@ -95,3 +91,11 @@
   get logged to log files. Every function within every file should have its own log 
   file. Make all code first, i will easily be able to go back and add the wrapper for 
   all error outputs.
+
+- Order models in dropdown by alphabetical.  
+
+- I dont think the system prompt is correctly being loaded into the chat history. We 
+  need to make sure we dont load multiple system prompts, only pick the most recent 
+  one.
+
+- Add publisher into the process-message.go file to publish to out.chat.%s.%s  
