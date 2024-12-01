@@ -91,4 +91,5 @@
   models are loaded, if they are processing a request, any errors, etc. I will need to
   make an error code lexicon and a comprehensive error code function, this will then
   get logged to log files. Every function within every file should have its own log 
-  file.
+  file. Make all code first, i will easily be able to go back and add the wrapper for 
+  all error outputs.
