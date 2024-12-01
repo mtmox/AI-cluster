@@ -46,6 +46,12 @@ type IncomingMessage struct {
 }
 
 func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
+	// First create the node config file
+	if err := nodeConfig(); err != nil {
+		logger.Printf("Failed to create node config: %v", err)
+		return
+	}
+	
 	// Load the node settings at startup
 	if err := LoadNodeSettings(); err != nil {
 		logger.Printf("Failed to load node settings: %v", err)
