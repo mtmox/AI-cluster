@@ -28,7 +28,7 @@ type Thread struct {
 }
 
 type Message struct {
-	Sender  string
+	Role  string
 	Content string
 }
 
@@ -60,7 +60,7 @@ func updateThreadsList(list *widget.List, threads []Thread) {
 func updateChatOutput(output *widget.Entry, messages []Message) {
 	var content string
 	for _, msg := range messages {
-		content += msg.Sender + ": " + msg.Content + "\n"
+		content += msg.Role + ": " + msg.Content + "\n"
 	}
 	output.SetText(content)
 }
@@ -69,9 +69,9 @@ func createThreadBox(number int) fyne.CanvasObject {
 	return widget.NewLabel(strconv.Itoa(number))
 }
 
-func appendMessage(output *widget.Entry, sender, content string) {
+func appendMessage(output *widget.Entry, role, content string) {
 	currentText := output.Text
-	newMessage := sender + ": " + content + "\n"
+	newMessage := role + ": " + content + "\n"
 	output.SetText(currentText + newMessage)
 }
 

@@ -13,6 +13,7 @@ import (
 type NodeSettings struct {
 	MaxParallelRequests int `json:"max_parallel_requests"`
 	MessageDelayMS      int `json:"message_delay_ms"`
+	MaxLoadedModels     int `json:"max_loaded_models"`
 }
 
 var (
@@ -35,6 +36,7 @@ func SaveNodeSettings(maxParallel int) error {
 	settings := NodeSettings{
 		MaxParallelRequests: maxParallel,
 		MessageDelayMS:      500,
+		MaxLoadedModels:     2, // Default value
 	}
 
 	data, err := json.Marshal(settings)

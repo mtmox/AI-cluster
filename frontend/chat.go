@@ -330,7 +330,7 @@ func sendMessage(js nats.JetStreamContext, messageBar *widget.Entry, conversatio
             currentThreadIndex = 0
         }
 
-        newMessage := Message{Sender: "User", Content: message}
+        newMessage := Message{Role: "User", Content: message}
         if sendToAllThreads {
             for i := range selectedConversation.Threads {
                 selectedConversation.Threads[i].Messages = append(selectedConversation.Threads[i].Messages, newMessage)

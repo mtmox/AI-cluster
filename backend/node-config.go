@@ -23,7 +23,7 @@ func nodeConfig() error {
 
 	envVars := map[string]map[string]string{
 		"OLLAMA_MAX_LOADED_MODELS": {
-			"value":       "3",
+			"value":       "2",
 			"description": "Maximum number of loaded models per GPU",
 		},
 		"OLLAMA_NUM_PARALLEL": {

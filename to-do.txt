@@ -81,3 +81,14 @@
   need to manually unload models that arent being used ONLY IF we have another 
   request to process that needs a different model. Otherwise ollama is set to unload
   the model manually after a default amount of time.
+
+- Unload all models if a mini goes down OR if the application closes.
+
+- Make general use function to write all output to log files, and then make collector
+  which gets all log file output and sends it to a database. We need to keep track of 
+  all output in realtime so I can see what the nodes are doing. Also create workflow
+  dashboard so I can see the status of each mini in realtime. I want to know which 
+  models are loaded, if they are processing a request, any errors, etc. I will need to
+  make an error code lexicon and a comprehensive error code function, this will then
+  get logged to log files. Every function within every file should have its own log 
+  file.
