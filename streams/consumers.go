@@ -92,7 +92,7 @@ func DurableGroupPull(
 	subject string,
 	durableName string,
 	queueGroup string,
-	callback func(msg *nats.Msg) bool, // Modified to return bool indicating if message should be processed
+	callback func(msg *nats.Msg) bool,
 ) (*nats.Subscription, error) {
 	// Create consumer configuration
 	consumerConfig := &nats.ConsumerConfig{
@@ -102,6 +102,7 @@ func DurableGroupPull(
 		FilterSubject: subject,
 		DeliverPolicy: nats.DeliverAllPolicy,
 		MaxDeliver:    -1,
+		AckWait:       30 * time.Second, // Increased AckWait time
 	}
 
 	// Create or get the consumer
@@ -123,39 +124,7 @@ func DurableGroupPull(
 		return nil, fmt.Errorf("failed to create pull subscription: %v", err)
 	}
 
-	// Start a goroutine to fetch and process messages
-	go func() {
-		for {
-			messages, err := subscription.Fetch(1, nats.MaxWait(250*time.Millisecond))
-			if err != nil {
-				if err != nats.ErrTimeout {
-					log.Printf("Error fetching message: %v", err)
-				}
-				continue
-			}
-
-			for _, msg := range messages {
-				// Call callback to check if this consumer should process the message
-				shouldProcess := callback(msg)
-				
-				if shouldProcess {
-					// Process the message
-					if err := msg.Ack(); err != nil {
-						log.Printf("Error acknowledging message: %v", err)
-					}
-				} else {
-					// If this consumer can't process the message, release it back to the stream
-					// with a small delay to prevent tight loops
-					if err := msg.NakWithDelay(100 * time.Millisecond); err != nil {
-						log.Printf("Error releasing message: %v", err)
-					}
-				}
-			}
-		}
-	}()
-
 	log.Printf("Queue group consumer setup complete for subject: %s, queue group: %s", subject, queueGroup)
-
 	return subscription, nil
 }
 

@@ -4,7 +4,6 @@
    because then your frontend computer will respond when the xSERVER.py file is
    turned on and you will start running a -backend instance flag along side 
    your -frontend instance.
-
    ***[DONE]***
 
 2. Add in system-prompts to the front end so i can pick which system prompt I 
@@ -63,16 +62,19 @@
 ----------------------------------------------------------------------------------
 
 - Order models in dropdown by alphabetical.
+
 - Fix problems with messages persisting after ive consumed them. ***[DONE]***
+
 - Fix GUI message history, just use right terms so i dont have to convert later
-  on in the pipeline.
+  on in the pipeline. ***[DONE]***
+
 - I dont think the system prompt is correctly being loaded into the chat history.
 
 - I need to set up consumers unique consumers for each node following criteria of
   step 4. The consumers will pull messages based on headers from the queue. The 
   header will be what model is required to process the message, if the node has 
   that downloaded model then it can pull and process the message.
-  ***[IMMEDIATE]***
+  ***[DONE]***
 
 - Make code to make waiting cue for loading models, if a model is in memory and we
   have another model we need to load we should unload the unused model, the reason
@@ -80,7 +82,7 @@
   into memory and were going to enforce it above ollamas exection layer so we will
   need to manually unload models that arent being used ONLY IF we have another 
   request to process that needs a different model. Otherwise ollama is set to unload
-  the model manually after a default amount of time.
+  the model manually after a default amount of time. ***[DONE]***
 
 - Unload all models if a mini goes down OR if the application closes.
 
