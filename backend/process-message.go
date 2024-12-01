@@ -46,6 +46,12 @@ type IncomingMessage struct {
 }
 
 func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
+	// Load the node settings at startup
+	if err := LoadNodeSettings(); err != nil {
+		logger.Printf("Failed to load node settings: %v", err)
+		return
+	}
+
 	streamName := "messages"
 	consumerGroup := "message_processors"
 	subject := "in.chat.>"
@@ -59,6 +65,13 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 
 	// Modified message handler that returns bool
 	messageHandler := func(msg *nats.Msg) bool {
+		// Check if we can process a new message
+		if !CanProcessMessage() {
+			return false
+		}
+
+		defer FinishProcessing()
+
 		// Print all headers
 		if msg.Header != nil {
 			for key, values := range msg.Header {
