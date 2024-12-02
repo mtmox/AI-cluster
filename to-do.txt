@@ -23,10 +23,10 @@
    Once we receive a response we then need to send it to "out.chat.>" subject in
    the messages stream, where it will then be picked up by a consumer and added
    to the correct threads in the correct conversation.
-   ***[PROBLEM]*** - We need to figure out how to include the system prompt into
+   We need to figure out how to include the system prompt into
    the message. Right now its not being included in the chat endpoint queries or 
    we have to make a new modelfile for each system prompt and downloaded model
-   combination.
+   combination. ***[DONE]***
 
 4. We next need to create a way for the nodes to load balance themselves. I need 
    to think about this a bit first. The "in.chat.>" message structure is important
@@ -42,8 +42,9 @@
    each node will spawn a durable pull consumer on every combination of 
    "in.chat.hash.>" that it has a corresponding local model for.
 
-   ***[SOLUTION]*** -create a 10ms lag so that each node can only pull 1 msg at a
+   -create a 10ms lag so that each node can only pull 1 msg at a
    time from the queue and after each pull it has to wait 10ms.
+   ***[DONE]***
 ----------------------------------------------------------------------------------
 
 5. Im not sure how but i need to make a standard error function. If we get an error 
@@ -96,7 +97,7 @@
 
 - I dont think the system prompt is correctly being loaded into the chat history. We 
   need to make sure we dont load multiple system prompts, only pick the most recent 
-  one.
+  one. ***[DONE]***
 
 - Add publisher into the process-message.go file to publish to out.chat.%s.%s ***[DONE]***
 
