@@ -44,6 +44,40 @@ func PublishToNats(js nats.JetStreamContext, subject string, data interface{}) e
     return nil
 }
 
+func PublishToNatsOutMessages(js nats.JetStreamContext, subject string, data []byte) error {
+    // jsonData, err := json.Marshal(data)
+    // if err != nil {
+        // return fmt.Errorf("failed to marshal data: %v", err)
+    //}
+
+    // Print the message exactly as it's being published
+    fmt.Printf("Publishing message to subject %s:\n%s\n", subject, string(data))
+
+    // Set a timeout for the publish operation
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    // Attempt to publish with context
+    ack, err := js.PublishMsg(&nats.Msg{
+        Subject: subject,
+        Data:    data,
+    }, nats.Context(ctx))
+
+    if err != nil {
+        if err == context.DeadlineExceeded {
+            return fmt.Errorf("publish operation timed out: %v", err)
+        }
+        return fmt.Errorf("failed to publish message: %v", err)
+    }
+
+    if ack == nil {
+        return fmt.Errorf("no acknowledgment received from stream")
+    }
+
+    // fmt.Printf("Message published to JetStream subject %s, sequence: %d\n", subject, ack.Sequence)
+    return nil
+}
+
 func PublishToNatsWithHeader(js nats.JetStreamContext, subject string, data []byte, header nats.Header) error {
     fmt.Printf("Attempting to publish message to subject: %s\n", subject)
     fmt.Printf("Message size: %d bytes\n", len(data))

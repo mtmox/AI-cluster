@@ -47,6 +47,13 @@ type IncomingMessage struct {
 	Messages       []ChatMessage `json:"messages"`
 }
 
+// NATSMessage represents the structure for messages published to NATS
+type NATSMessage struct {
+	ConversationID string `json:"conversation_id"`
+	ThreadID       int    `json:"thread_id"`
+	Content        string `json:"content"`
+}
+
 // Initialize color functions
 var (
 	incomingColor = color.New(color.FgCyan).SprintFunc()
@@ -107,6 +114,17 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 								idColor(convID),
 								idColor(threadID),
 								responseColor(response))
+
+							natsMsg := &NATSMessage{
+								ConversationID: convID,
+								ThreadID: 		threadID,
+								Content:		response,
+							}
+
+							if err := publishMessage(js, natsMsg); err != nil {
+								logger.Printf("Error publishing message to NATS: %v", err)
+								return
+							}	
 							return
 						}
 					}
@@ -257,4 +275,21 @@ func sendToLLM(messageData []byte, logger *log.Logger) (string, string, int, err
 	}
 
 	return chatResponse.Message.Content, incomingMsg.ConversationID, incomingMsg.ThreadID, nil
+}
+
+func publishMessage(js nats.JetStreamContext, msg *NATSMessage) error {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("error marshaling message: %v", err)
+	}
+
+	// Send to NATS subject (you can modify the subject as needed)
+	subject := fmt.Sprintf("out.chat.%s.%d", msg.ConversationID, msg.ThreadID)
+	
+	err = streams.PublishToNatsOutMessages(js, subject, data)
+	if err != nil {
+		return fmt.Errorf("error publishing to NATS: %v", err)
+	}
+
+	return nil
 }

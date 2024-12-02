@@ -35,6 +35,7 @@ func StartFrontend(js nats.JetStreamContext, logger *log.Logger) {
 	w.SetContent(tabs)
 	w.Resize(fyne.NewSize(1536, 1152))
 	configSyncModels(js, logger)
+	consumeOutChatMessages(js, logger)
 	backend.ProcessMessage(js, logger)
 	w.ShowAndRun()
 }
