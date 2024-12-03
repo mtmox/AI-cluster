@@ -33,7 +33,7 @@ brew install python3 go git nats-server nats-io/nats-tools/nats
 # Check and add cron job if not present
 echo "Checking cron job..."
 CRON_JOB="* * * * * /opt/homebrew/bin/python3 $HOME/AI-cluster/setup/check_update_AI-cluster.py"
-if ! crontab -l 2>/dev/null | grep -q "check_update.py"; then
+if ! crontab -l 2>/dev/null | grep -q "check_update_AI-cluster.py"; then
     echo "Setting up cron job..."
     (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
     echo "Cron job added."
@@ -43,7 +43,7 @@ fi
 
 echo "Checking cron job..."
 CRON_JOB="* * * * * /opt/homebrew/bin/python3 $HOME/AI-cluster/setup/start_node_AI-cluster.py"
-if ! crontab -l 2>/dev/null | grep -q "start_node.py"; then
+if ! crontab -l 2>/dev/null | grep -q "start_node_AI-cluster.py"; then
     echo "Setting up cron job..."
     (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
     echo "Cron job added."
@@ -53,7 +53,7 @@ fi
 
 echo "Checking cron job..."
 CRON_JOB="* * * * * /opt/homebrew/bin/python3 $HOME/AI-cluster/setup/stop_node_AI-cluster.py"
-if ! crontab -l 2>/dev/null | grep -q "stop_node.py"; then
+if ! crontab -l 2>/dev/null | grep -q "stop_node_AI-cluster.py"; then
     echo "Setting up cron job..."
     (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
     echo "Cron job added."
