@@ -11,6 +11,7 @@ import (
 	
 	"github.com/mtmox/AI-cluster/constants"
 	"github.com/mtmox/AI-cluster/streams"
+	"github.com/mtmox/AI-cluster/nats_server"
 	"github.com/mtmox/AI-cluster/frontend"
 	"github.com/mtmox/AI-cluster/backend"
 )
@@ -35,7 +36,7 @@ func main() {
 	if *isFrontend {
 		// Start NATS server
 		logger.Println("Starting NATS queue")
-		streams.StartNats()
+		nats_server.StartNats()
 		runFrontend(logger) 
 	} else {
 		runBackend(logger)
@@ -44,7 +45,7 @@ func main() {
 
 func runFrontend(logger *log.Logger) {
 	// Connect to NATS server and get the JetStream context
-	js, err := streams.ConnectToNats()
+	js, err := nats_server.ConnectToNats()
 	if err != nil {
 		logger.Fatalf("Failed to connect to NATS: %v", err)
 	}
@@ -57,12 +58,12 @@ func runFrontend(logger *log.Logger) {
 
 	logger.Println("Starting frontend instance")
 	frontend.StartFrontend(js, logger)
-	streams.StopNats()
+	nats_server.StopNats()
 }
 
 func runBackend(logger *log.Logger) {
 	// Connect to NATS server and get the JetStream context
-	js, err := streams.ConnectToNats()
+	js, err := nats_server.ConnectToNats()
 	if err != nil {
 		logger.Fatalf("Failed to connect to NATS: %v", err)
 	}

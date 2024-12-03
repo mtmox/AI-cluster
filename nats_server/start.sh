@@ -15,7 +15,7 @@ then
 else
     # Start NATS server with configuration file using absolute path
     echo "Starting NATS server..."
-    /opt/homebrew/bin/nats-server -c "$HOME/AI-cluster/streams/nats-server.conf" &
+    /opt/homebrew/bin/nats-server -c "$HOME/AI-cluster/nats_server/nats-server.conf" &
 
     # Give the server a moment to start
     sleep 5

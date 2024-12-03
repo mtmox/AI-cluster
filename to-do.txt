@@ -102,3 +102,7 @@
 - Add publisher into the process-message.go file to publish to out.chat.%s.%s ***[DONE]***
 
 - Do something with any leftover response message from the LLM in NATS subject out.chat.>  
+
+- In the main.go file I should create a third flag which should be responsible for starting
+  and keeping our NATS server running, it should also handle the case where we have 
+  interruptions or outages.

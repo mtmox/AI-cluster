@@ -1,5 +1,5 @@
 
-package streams
+package nats_server
 
 import (
 	"log"
@@ -8,12 +8,13 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/mtmox/AI-cluster/constants"
+	"github.com/mtmox/AI-cluster/streams"
 )
 
 
 func StartNats() {
 	// Execute start.sh script
-	cmd := exec.Command("./streams/start.sh")
+	cmd := exec.Command("./nats_server/start.sh")
 	err := cmd.Run()
 	if err != nil {
 		log.Fatalf("Failed to execute start.sh: %v", err)
@@ -23,7 +24,7 @@ func StartNats() {
 }
 
 func StopNats() {
-	cmd := exec.Command("./streams/stop.sh")
+	cmd := exec.Command("./nats_server/stop.sh")
 	err := cmd.Run()
 	if err != nil {
 		log.Fatalf("Failed to execute stop.sh: %v", err)
@@ -60,7 +61,7 @@ func ConnectToNats() (nats.JetStreamContext, error) {
 	log.Println("JetStream context created successfully")
 
 	// Create streams for each configuration
-	for _, streamConfig := range constants.Streams {
+	for _, streamConfig := range streams.Streams {
 		err := createStream(js, streamConfig)
 		if err != nil {
 			log.Printf("Error creating stream %s: %v", streamConfig.Name, err)
@@ -70,7 +71,7 @@ func ConnectToNats() (nats.JetStreamContext, error) {
 	return js, nil
 }
 
-func createStream(js nats.JetStreamContext, config constants.StreamConfig) error {
+func createStream(js nats.JetStreamContext, config streams.StreamConfig) error {
 	streamInfo, err := js.StreamInfo(config.Name)
 	if err != nil {
 		if err == nats.ErrStreamNotFound {

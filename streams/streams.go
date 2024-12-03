@@ -1,5 +1,5 @@
 
-package constants
+package streams
 
 import (
 	"time"
@@ -29,10 +29,6 @@ var Streams = []StreamConfig{
 		},
 		Retention: nats.WorkQueuePolicy,
 	},
-
-
-
-
 	{
 		Name: "nodes",
 		Subjects: []string{
