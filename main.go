@@ -34,8 +34,6 @@ func main() {
 
 	// Run the appropriate instance type
 	if *isFrontend {
-		// Start NATS server
-		logger.Println("Starting NATS queue")
 		nats_server.StartNats()
 		runFrontend(logger) 
 	} else {
