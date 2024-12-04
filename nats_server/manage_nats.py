@@ -8,7 +8,6 @@ import logging
 from datetime import datetime
 import os
 import socket
-import sys
 
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -102,7 +101,7 @@ def check_flag():
                     logging.error(f"Error checking start status on {server_ip}: HTTP {response.getcode()}")
         except urllib.error.URLError as e:
             logging.error(f"Error connecting to server {server_ip}: {e}")
-            continue
+            break
 
 def run_start_script():
     try:
@@ -119,7 +118,7 @@ def run_stop_script():
         logging.error(f"Error executing stop script: {e}")        
 
 if __name__ == "__main__":
-    if not is_server():
-        logging.info("Script not running on NATS server, exiting")
-        sys.exit(1)
-    check_flag()
+    if is_server():
+        check_flag()
+    else:
+        logging.info("Script not running on NATS server, skipping execution")
