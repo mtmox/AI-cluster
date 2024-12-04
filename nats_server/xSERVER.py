@@ -1,3 +1,4 @@
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import threading
@@ -18,26 +19,26 @@ class UpdateHandler(BaseHTTPRequestHandler):
         global start_available, stop_available
 
         if self.path == '/flag':
-            self.handle_response('start_available', start_available)
-        elif self.path == '/flag':
-            self.handle_response('stop_available', stop_available)
+            # Send both flags in the response
+            response_data = {
+                'start_available': start_available,
+                'stop_available': stop_available
+            }
+            
+            # If either flag is true, send 200 OK
+            if start_available or stop_available:
+                self.send_response(200)
+                print(colored(f"200 - {self.path} - Action allowed", 'green'))
+            else:
+                # If both flags are false, send 204 No Content
+                self.send_response(204)
+                print(colored(f"204 - {self.path} - Action skipped", 'red'))
+                
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(response_data).encode())
         else:
             self.send_error(404)
-
-    def handle_response(self, flag_name, flag_value):
-        if flag_value:
-            # If flag is true, send 200 OK
-            self.send_response(200)
-            print(colored(f"200 - {self.path} - Action allowed", 'green'))
-        else:
-            # If flag is false, send 204 No Content
-            self.send_response(204)
-            print(colored(f"204 - {self.path} - Action skipped", 'red'))
-            
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        response = json.dumps({flag_name: flag_value})
-        self.wfile.write(response.encode())
 
 def run_server():
     server_address = (HOST, PORT)
@@ -50,7 +51,7 @@ def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def display_menu():
-    global update_available, start_available, stop_available
+    global start_available, stop_available
     print("\nCurrent status:")
     print(f"Start available: {'Yes' if start_available else 'No'}")
     print(f"Stop available: {'Yes' if stop_available else 'No'}")
