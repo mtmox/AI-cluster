@@ -11,8 +11,6 @@ import socket
 
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-START_SCRIPT = os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'start.sh')
-STOP_SCRIPT = os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'stop.sh')
 
 # Configure logging with absolute path
 logging.basicConfig(
@@ -30,6 +28,9 @@ SERVER_IPS = [
     '192.168.1.83',
     '192.168.1.140'
 ]
+
+START_SCRIPT = os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'start.sh')
+STOP_SCRIPT = os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'stop.sh')
 
 def get_nats_config():
     try:
