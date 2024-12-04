@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define the source and output files
-SOURCE_FILE="../../AI-cluster/constants/constants.go"
-OUTPUT_FILE="nats-server-url.json"
+SOURCE_FILE="$HOME/AI-cluster/constants/constants.go"
+OUTPUT_FILE="$HOME/AI-cluster/nats_server/nats-server-url.json"
 
 # Check if the source file exists
 if [ ! -f "$SOURCE_FILE" ]; then
