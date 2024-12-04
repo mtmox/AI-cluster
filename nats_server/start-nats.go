@@ -4,33 +4,11 @@ package nats_server
 import (
 	"log"
 	"time"
-	"os/exec"
 
 	"github.com/nats-io/nats.go"
 	"github.com/mtmox/AI-cluster/constants"
 	"github.com/mtmox/AI-cluster/streams"
 )
-
-
-func StartNats() {
-	// Execute start.sh script
-	cmd := exec.Command("./nats_server/start.sh")
-	err := cmd.Run()
-	if err != nil {
-		log.Fatalf("Failed to execute start.sh: %v", err)
-	}
-
-	log.Println("NATS server STARTED successfully")
-}
-
-func StopNats() {
-	cmd := exec.Command("./nats_server/stop.sh")
-	err := cmd.Run()
-	if err != nil {
-		log.Fatalf("Failed to execute stop.sh: %v", err)
-	}
-	log.Println("Nats server STOPPED successfully")
-}
 
 func ConnectToNats() (nats.JetStreamContext, error) {
 	var nc *nats.Conn

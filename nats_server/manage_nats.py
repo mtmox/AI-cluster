@@ -45,15 +45,37 @@ def extract_ip_from_nats_url(nats_url):
     except:
         return ''
 
+def get_local_ip():
+    try:
+        # Create a socket and connect to an external address
+        # This won't actually establish a connection but will help us
+        # determine which local interface would be used
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)  # Non-blocking mode
+        try:
+            # We don't need to actually reach this address
+            s.connect(('10.254.254.254', 1))
+            local_ip = s.getsockname()[0]
+        except Exception:
+            local_ip = '127.0.0.1'
+        finally:
+            s.close()
+        return local_ip
+    except Exception as e:
+        logging.error(f"Error getting local IP: {e}")
+        return '127.0.0.1'
+
 def is_server():
     try:
-        host_ip = socket.gethostbyname(socket.gethostname())
+        host_ip = get_local_ip()
         nats_url = get_nats_config()
         nats_ip = extract_ip_from_nats_url(nats_url)
         
+        logging.info(f"host_ip={host_ip} and nats_ip={nats_ip}")
         # Check if the host IP matches the NATS IP
         return host_ip == nats_ip
-    except:
+    except Exception as e:
+        logging.error(f"Error in is_server(): {e}")
         return False
 
 def check_flag():
