@@ -22,7 +22,7 @@ fi
 
 # Start NATS server with configuration file using absolute path
 log_message "Starting NATS server..."
-nohup /opt/homebrew/bin/nats-server -c "$HOME/AI-cluster/nats_server/nats-server.conf" > nats.log 2>&1 &
+nohup /opt/homebrew/bin/nats-server -c "$HOME/AI-cluster/nats_server/nats-server.conf" > flag.log 2>&1 &
 
 # Give the server a moment to start
 sleep 2
