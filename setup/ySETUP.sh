@@ -63,7 +63,7 @@ fi
 
 echo "Checking cron job..."
 CRON_JOB="*/5 * * * * /opt/homebrew/bin/python3 $HOME/AI-cluster/nats-server/manage_nats.py"
-if ! crontab -l 2>/dev/null | grep -q "stop_node_AI-cluster.py"; then
+if ! crontab -l 2>/dev/null | grep -q "manage_nats.py"; then
     echo "Setting up cron job..."
     (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
     echo "Cron job added."
