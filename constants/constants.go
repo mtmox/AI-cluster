@@ -8,7 +8,7 @@ import (
 
 const (
 	// NatsURL is the computer running the queue
-	NatsURL = "nats://192.168.1.16:4222"
+	NatsURL = "nats://192.168.1.140:4222"
 	// OllamaURL is the base URL for the API
 	OllamaURL = "http://localhost:11434"
 
@@ -17,6 +17,8 @@ const (
 	ChatEndpoint = OllamaURL + "/api/chat"
 	GenerateEndpoint = OllamaURL + "/api/generate"
 	LoadedModels = OllamaURL + "/api/ps"
+	PullModels = OllamaURL + "/api/pull"
+	DeleteModels = OllamaURL + "/api/delete"
 )
 
 var (
