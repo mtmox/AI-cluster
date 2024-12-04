@@ -61,6 +61,16 @@ else
     echo "Cron job for stop_node.py already exists. Skipping."
 fi
 
+echo "Checking cron job..."
+CRON_JOB="* * * * * /opt/homebrew/bin/python3 $HOME/AI-cluster/nats-server/manage_nats.py"
+if ! crontab -l 2>/dev/null | grep -q "stop_node_AI-cluster.py"; then
+    echo "Setting up cron job..."
+    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+    echo "Cron job added."
+else
+    echo "Cron job for stop_node.py already exists. Skipping."
+fi
+
 # Function to create a deploy key for a repository
 create_deploy_key() {
     local repo_name="$1"
