@@ -20,14 +20,7 @@ logging.basicConfig(
 )
 
 # Configuration
-SERVER_IPS = [
-    '192.168.1.16',
-    '192.168.1.22',
-    '192.168.1.34',
-    '192.168.1.35',
-    '192.168.1.83',
-    '192.168.1.140'
-]
+SERVER_IP = '192.168.1.16'  # Changed from SERVER_IPS to SERVER_IP
 
 START_SCRIPT = os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'start.sh')
 STOP_SCRIPT = os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'stop.sh')
@@ -84,29 +77,25 @@ def is_server():
         return False
 
 def check_flag():
-    for server_ip in SERVER_IPS:
-        try:
-            server_url = f'http://{server_ip}:8091'
-            with urllib.request.urlopen(f"{server_url}/flag") as response:
-                if response.getcode() == 200:
-                    data = json.loads(response.read().decode())
-                    if data.get('start_available'):
-                        logging.info("Start flag is true, running start script...")
-                        run_start_script()
-                        break
-                    elif data.get('stop_available'):
-                        logging.info("Stop flag is true, running stop script...")
-                        run_stop_script()
-                        break
-                    else:
-                        logging.info("No flag skipping actions...")
-                elif response.getcode() == 204:
-                    logging.info(f"Start check skipped for {server_ip} - no action required")
+    try:
+        server_url = f'http://{SERVER_IP}:8091'  # Using single SERVER_IP
+        with urllib.request.urlopen(f"{server_url}/flag") as response:
+            if response.getcode() == 200:
+                data = json.loads(response.read().decode())
+                if data.get('start_available'):
+                    logging.info("Start flag is true, running start script...")
+                    run_start_script()
+                elif data.get('stop_available'):
+                    logging.info("Stop flag is true, running stop script...")
+                    run_stop_script()
                 else:
-                    logging.error(f"Error checking start status on {server_ip}: HTTP {response.getcode()}")
-        except urllib.error.URLError as e:
-            logging.error(f"Error connecting to server {server_ip}: {e}")
-            break
+                    logging.info("No flag skipping actions...")
+            elif response.getcode() == 204:
+                logging.info(f"Start check skipped for {SERVER_IP} - no action required")
+            else:
+                logging.error(f"Error checking start status on {SERVER_IP}: HTTP {response.getcode()}")
+    except urllib.error.URLError as e:
+        logging.error(f"Error connecting to server {SERVER_IP}: {e}")
 
 def run_start_script():
     try:
