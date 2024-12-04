@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Function to check if NATS server is running
