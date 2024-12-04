@@ -8,6 +8,7 @@ import logging
 from datetime import datetime
 import os
 import socket
+import sys
 
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -118,7 +119,7 @@ def run_stop_script():
         logging.error(f"Error executing stop script: {e}")        
 
 if __name__ == "__main__":
-    if is_server():
-        check_flag()
-    else:
-        logging.info("Script not running on NATS server, skipping execution")
+    if not is_server():
+        logging.info("Script not running on NATS server, exiting")
+        sys.exit(1)
+    check_flag()
