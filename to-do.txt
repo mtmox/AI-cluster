@@ -93,7 +93,10 @@
   file. Make all code first, i will easily be able to go back and add the wrapper for 
   all error outputs.
 
-- Order models in dropdown by alphabetical.  
+- Order models in dropdown by alphabetical.
+
+- Fix text input box so that I can paste into it and so that its larger, also make 
+  shift + enter give me a new line.
 
 - I dont think the system prompt is correctly being loaded into the chat history. We 
   need to make sure we dont load multiple system prompts, only pick the most recent 
@@ -105,4 +108,9 @@
 
 - In the main.go file I should create a third flag which should be responsible for starting
   and keeping our NATS server running, it should also handle the case where we have 
-  interruptions or outages.
+  interruptions or outages. I actually dont even think I want the entry to starting and 
+  stopping the NATS server to be in the golang code, i actually think i want to put the 
+  start sequence in maintenance. I need to rework the constants.go file where we store the 
+  NatsURL constant and i may need to change the code so that nats-server.go can be start
+  and stopped with my bash scripts. I really want the process to be able to be hosted on
+  any node and the other nodes be able to detect that and just work normally. 
