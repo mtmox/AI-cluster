@@ -100,6 +100,10 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 
 				if modelName := msg.Header.Get("model"); modelName != "" {
 					for _, model := range modelsInfo.Models {
+						// I think right here we need to do something because if a computer checks and 
+						// doesnt have the model its still taking the message. This is wrong, it needs 
+						// to only check the header against its local models and only take the message 
+						// if it has a match and is below its number of available to process messages.
 						if model.Name == modelName {
 							logger.Printf("Processing message for model: %s", modelName)
 							logger.Printf(incomingColor("Incoming Message Data: %s"), string(msg.Data))

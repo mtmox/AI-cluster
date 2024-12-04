@@ -66,6 +66,7 @@ def get_local_ip():
         return '127.0.0.1'
 
 def is_server():
+    subprocess.run(["bash", os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'nats-server-url.sh')], check=True)
     try:
         host_ip = get_local_ip()
         nats_url = get_nats_config()

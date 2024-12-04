@@ -113,4 +113,11 @@
   start sequence in maintenance. I need to rework the constants.go file where we store the 
   NatsURL constant and i may need to change the code so that nats-server.go can be start
   and stopped with my bash scripts. I really want the process to be able to be hosted on
-  any node and the other nodes be able to detect that and just work normally. 
+  any node and the other nodes be able to detect that and just work normally. ***[DONE]***
+
+----------------------------------------------------------------------------------
+
+- I dont think the consumers are picking up all the message or consumers that cant process
+  the messages are picking them up which is causing me to have blanks. Something is wrong
+  somewhere. First fix seperating nats-server start and stop, use cron and python to send
+  signal to start and stop server.
