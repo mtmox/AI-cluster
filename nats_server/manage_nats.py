@@ -11,6 +11,8 @@ import socket
 
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+START_SCRIPT = os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'start.sh')
+STOP_SCRIPT = os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'stop.sh')
 
 # Configure logging with absolute path
 logging.basicConfig(
@@ -106,14 +108,14 @@ def check_flag():
 
 def run_start_script():
     try:
-        subprocess.run(["bash", os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'start.sh')], check=True)
+        subprocess.run(["bash", START_SCRIPT], check=True) 
         logging.info("Start script executed successfully")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error executing start script: {e}")
 
 def run_stop_script():
     try:
-        subprocess.run(["bash", os.path.join(os.environ['HOME'], 'AI-cluster', 'nats_server', 'stop.sh')], check=True)
+        subprocess.run(["bash", STOP_SCRIPT], check=True)
         logging.info("Stop script executed successfully")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error executing stop script: {e}")        
