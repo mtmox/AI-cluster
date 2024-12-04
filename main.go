@@ -34,7 +34,6 @@ func main() {
 
 	// Run the appropriate instance type
 	if *isFrontend {
-		nats_server.StartNats()
 		runFrontend(logger) 
 	} else {
 		runBackend(logger)
@@ -56,7 +55,6 @@ func runFrontend(logger *log.Logger) {
 
 	logger.Println("Starting frontend instance")
 	frontend.StartFrontend(js, logger)
-	nats_server.StopNats()
 }
 
 func runBackend(logger *log.Logger) {
