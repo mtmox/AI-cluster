@@ -86,58 +86,61 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 	var wg sync.WaitGroup
 
 	messageHandler := func(msg *nats.Msg) bool {
+		if msg.Header == nil {
+			logger.Printf("Message without headers, skipping")
+			return false
+		}
+
+		modelName := msg.Header.Get("model")
+		if modelName == "" {
+			logger.Printf("Message without model header, skipping")
+			return false
+		}
+
+		// Check if this node has the required model
+		hasModel := false
+		for _, model := range modelsInfo.Models {
+			if model.Name == modelName {
+				hasModel = true
+				break
+			}
+		}
+
+		if !hasModel {
+			logger.Printf("Model %s not found in local models, skipping", modelName)
+			return false
+		}
+
+		// If we have the model, process the message
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			defer FinishProcessing()
 
-			if msg.Header != nil {
-				for key, values := range msg.Header {
-					for _, value := range values {
-						logger.Printf("Header - %s: %s", key, value)
-					}
-				}
+			logger.Printf("Processing message for model: %s", modelName)
+			logger.Printf(incomingColor("Incoming Message Data: %s"), string(msg.Data))
 
-				if modelName := msg.Header.Get("model"); modelName != "" {
-					for _, model := range modelsInfo.Models {
-						// I think right here we need to do something because if a computer checks and 
-						// doesnt have the model its still taking the message. This is wrong, it needs 
-						// to only check the header against its local models and only take the message 
-						// if it has a match and is below its number of available to process messages.
-						if model.Name == modelName {
-							logger.Printf("Processing message for model: %s", modelName)
-							logger.Printf(incomingColor("Incoming Message Data: %s"), string(msg.Data))
+			response, convID, threadID, err := sendToLLM(msg.Data, logger)
+			if err != nil {
+				logger.Printf("Error processing message with LLM: %v", err)
+				return
+			}
+			logger.Printf("%s [ConvID: %s, ThreadID: %d] %s",
+				idColor("Response"),
+				idColor(convID),
+				idColor(threadID),
+				responseColor(response))
 
-							response, convID, threadID, err := sendToLLM(msg.Data, logger)
-							if err != nil {
-								logger.Printf("Error processing message with LLM: %v", err)
-								return
-							}
-							logger.Printf("%s [ConvID: %s, ThreadID: %d] %s",
-								idColor("Response"),
-								idColor(convID),
-								idColor(threadID),
-								responseColor(response))
-
-							natsMsg := &NATSMessage{
-								ConversationID: convID,
-								ThreadID: 		threadID,
-								Content:		response,
-							}
-
-							if err := publishMessage(js, natsMsg); err != nil {
-								logger.Printf("Error publishing message to NATS: %v", err)
-								return
-							}	
-							return
-						}
-					}
-					logger.Printf("Model %s not found in models file", modelName)
-					return
-				}
+			natsMsg := &NATSMessage{
+				ConversationID: convID,
+				ThreadID:       threadID,
+				Content:       response,
 			}
 
-			logger.Printf("Message without model header: %s", string(msg.Data))
+			if err := publishMessage(js, natsMsg); err != nil {
+				logger.Printf("Error publishing message to NATS: %v", err)
+				return
+			}
 		}()
 
 		return true
