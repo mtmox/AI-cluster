@@ -82,18 +82,19 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 		return
 	}
 
-	// Create a worker pool
 	var wg sync.WaitGroup
 
 	messageHandler := func(msg *nats.Msg) bool {
 		if msg.Header == nil {
 			logger.Printf("Message without headers, skipping")
+			msg.Nak() // Explicitly reject the message
 			return false
 		}
 
 		modelName := msg.Header.Get("model")
 		if modelName == "" {
 			logger.Printf("Message without model header, skipping")
+			msg.Nak() // Explicitly reject the message
 			return false
 		}
 
@@ -108,6 +109,7 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 
 		if !hasModel {
 			logger.Printf("Model %s not found in local models, skipping", modelName)
+			msg.Nak() // Explicitly reject the message so it's immediately available for other consumers
 			return false
 		}
 
@@ -123,8 +125,10 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 			response, convID, threadID, err := sendToLLM(msg.Data, logger)
 			if err != nil {
 				logger.Printf("Error processing message with LLM: %v", err)
+				msg.Nak() // Reject the message if processing fails
 				return
 			}
+			
 			logger.Printf("%s [ConvID: %s, ThreadID: %d] %s",
 				idColor("Response"),
 				idColor(convID),
@@ -139,8 +143,11 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 
 			if err := publishMessage(js, natsMsg); err != nil {
 				logger.Printf("Error publishing message to NATS: %v", err)
+				msg.Nak() // Reject the message if publishing fails
 				return
 			}
+
+			msg.Ack() // Acknowledge only after successful processing
 		}()
 
 		return true
@@ -211,11 +218,8 @@ func FetchMessages(subscription *nats.Subscription, callback func(msg *nats.Msg)
 			tasksLock.Lock()
 			activeTasks--
 			tasksLock.Unlock()
+			// Note: We don't need to Ack/Nak here as it's handled in the callback
 			continue
-		}
-
-		if err := msg.Ack(); err != nil {
-			return fmt.Errorf("error acknowledging message: %v", err)
 		}
 	}
 
