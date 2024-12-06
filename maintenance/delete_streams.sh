@@ -8,7 +8,7 @@ if ! command -v nats &> /dev/null; then
 fi
 
 # NATS server URL - modify if needed
-NATS_URL="nats://localhost:4222"
+NATS_URL="nats://192.168.1.140:4222"
 
 # Get list of all streams
 echo "Fetching streams..."
