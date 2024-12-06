@@ -160,13 +160,14 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 
 	// Start a goroutine for message processing
 	go func() {
-		ticker := time.NewTicker(200 * time.Millisecond)
+		ticker := time.NewTicker(500 * time.Millisecond)
 		for {
 			select {
 			case <-ticker.C:
 				availableSlots := GetAvailableProcessingSlots()
+				max_fetch_messages := 1
 				if availableSlots > 0 {
-					err := FetchMessages(subscription, messageHandler, availableSlots)
+					err := FetchMessages(subscription, messageHandler, max_fetch_messages)
 					if err != nil {
 						logger.Printf("Error fetching messages: %v", err)
 					}
