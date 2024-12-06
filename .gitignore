@@ -10,6 +10,6 @@
 
 
 AI-cluster
-log_parser
+log-parser
 
 !nats-server.conf
