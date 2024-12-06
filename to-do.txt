@@ -1,89 +1,12 @@
-1. Work on setup dir so that when i run ySETUP.py i can choose not to add cron
-   jobs. The reason is that you dont want the cron job to execute on the computer
-   that youre going to be using as the -frontend flag. It will mess up the logic
-   because then your frontend computer will respond when the xSERVER.py file is
-   turned on and you will start running a -backend instance flag along side 
-   your -frontend instance.
-   ***[DONE]***
-
-2. Add in system-prompts to the front end so i can pick which system prompt I 
-   want to send off with the payload. ***[DONE]***
-
-3. Work on collecting all information from front end and then packaging it for
-   the "in.chat.>" subject in the messages stream. All of our messages will go 
-   through a collection function from the front end before they reach a subject.
-   This collection will seperate them and divide them into the correct subjects.
-   From here we will have a piece
-   of code which determines which LLM we want to then go to. We are going to add
-   in GPT, gemini, and anthropic later. We are starting with just Ollama first.
-   Make code that first figures out which LLM to route to, then hands it off to
-   the correct function which then takes our payload and structures it correctly
-   for the LLM. ***[DONE]***
-
-   Once we receive a response we then need to send it to "out.chat.>" subject in
-   the messages stream, where it will then be picked up by a consumer and added
-   to the correct threads in the correct conversation.
-   We need to figure out how to include the system prompt into
-   the message. Right now its not being included in the chat endpoint queries or 
-   we have to make a new modelfile for each system prompt and downloaded model
-   combination. ***[DONE]***
-
-4. We next need to create a way for the nodes to load balance themselves. I need 
-   to think about this a bit first. The "in.chat.>" message structure is important
-   because we dont want nodes consuming messages they cant process and then having 
-   to republish them. The subject names should be ordered in a way where nodes 
-   know before hand if they can even do any of the work within that subject. For 
-   instance, we first need to convert every model name into a hash, otherwise we 
-   are going to run into trouble with decimals and colons. Once we have created a 
-   mapping each node will be able to take the models it has on its local drive
-   and compare the hash the name generates against the hash in the subject line 
-   "in.chat.hash.conversation.thread.>" where the conversation and thread arent 
-   important the ".>" would go after hash. We will need to make durable pull 
-   each node will spawn a durable pull consumer on every combination of 
-   "in.chat.hash.>" that it has a corresponding local model for.
-
-   -create a 10ms lag so that each node can only pull 1 msg at a
-   time from the queue and after each pull it has to wait 10ms.
-   ***[DONE]***
+----------------------------------------------------------------------------------
+WORKING ON
 ----------------------------------------------------------------------------------
 
-5. Im not sure how but i need to make a standard error function. If we get an error 
-   we need to call this function and then handle the error by writing it to a data-
-   base. Down the line we can actually specialize some AI's with our specific code-
-   base and when we get an error we can pass it to the AI's and see how they would 
-   resolve the issue. I could fork the repo and make an AI controlled repo, ill need
-   to familiarize myself with docker cause youll want a standard env where the AI's
-   can pass changes to so they can be tested. IDK this part will be more difficult
-   but its a possibility later.
+- I need to organize all reused variables so that all json file paths, database paths,
+  and log file paths are stored in the contants.go file. This creates only one line I 
+  have to change if i decide to change paths or redo directory structure.
 
-6. Need to make storage databases to catch .log file output from nats, and we also 
-   should be logging all program errors to a nats subject which we then write to a
-   database. This will help figure out where problems are.   
-
-----------------------------------------------------------------------------------
-
-- Fix problems with messages persisting after ive consumed them. ***[DONE]***
-
-- Fix GUI message history, just use right terms so i dont have to convert later
-  on in the pipeline. ***[DONE]***
-
-- I need to set up consumers unique consumers for each node following criteria of
-  step 4. The consumers will pull messages based on headers from the queue. The 
-  header will be what model is required to process the message, if the node has 
-  that downloaded model then it can pull and process the message.
-  ***[DONE]***
-
-- Make code to make waiting cue for loading models, if a model is in memory and we
-  have another model we need to load we should unload the unused model, the reason
-  we have to do this is we are only going to allow 2 models at a time to be loaded
-  into memory and were going to enforce it above ollamas exection layer so we will
-  need to manually unload models that arent being used ONLY IF we have another 
-  request to process that needs a different model. Otherwise ollama is set to unload
-  the model manually after a default amount of time. ***[DONE]***
-
-- Unload all models if a mini goes down OR if the application closes.
-
-- Make general use function to write all output to log files, and then make collector
+- [Make general use function to write all output to log files, and then make collector
   which gets all log file output and sends it to a database. We need to keep track of 
   all output in realtime so I can see what the nodes are doing. Also create workflow
   dashboard so I can see the status of each mini in realtime. I want to know which 
@@ -92,37 +15,35 @@
   get logged to log files. Every function within every file should have its own log 
   file. Make all code first, i will easily be able to go back and add the wrapper for 
   all error outputs.
+- Im not sure how but i need to make a standard error function. If we get an error 
+  we need to call this function and then handle the error by writing it to a data-
+  base. Down the line we can actually specialize some AI's with our specific code-
+  base and when we get an error we can pass it to the AI's and see how they would 
+  resolve the issue. I could fork the repo and make an AI controlled repo, ill need
+  to familiarize myself with docker cause youll want a standard env where the AI's
+  can pass changes to so they can be tested. IDK this part will be more difficult
+  but its a possibility later.]
 
-- Order models in dropdown by alphabetical.
+----------------------------------------------------------------------------------
+URGENT NEEDS ATTENTION
+----------------------------------------------------------------------------------
 
-- Fix text input box so that I can paste into it and so that its larger, also make 
-  shift + enter give me a new line.
+ 
 
-- I dont think the system prompt is correctly being loaded into the chat history. We 
-  need to make sure we dont load multiple system prompts, only pick the most recent 
-  one. ***[DONE]***
+----------------------------------------------------------------------------------
+NEEDS ATTENTION
+---------------------------------------------------------------------------------- 
 
-- Add publisher into the process-message.go file to publish to out.chat.%s.%s ***[DONE]***
+- Unload all models if a mini goes down OR if the application closes.
 
 - Do something with any leftover response message from the LLM in NATS subject out.chat.>  
 
-- In the main.go file I should create a third flag which should be responsible for starting
-  and keeping our NATS server running, it should also handle the case where we have 
-  interruptions or outages. I actually dont even think I want the entry to starting and 
-  stopping the NATS server to be in the golang code, i actually think i want to put the 
-  start sequence in maintenance. I need to rework the constants.go file where we store the 
-  NatsURL constant and i may need to change the code so that nats-server.go can be start
-  and stopped with my bash scripts. I really want the process to be able to be hosted on
-  any node and the other nodes be able to detect that and just work normally. ***[DONE]***
-
 ----------------------------------------------------------------------------------
-
-- I dont think the consumers are picking up all the message or consumers that cant process
-  the messages are picking them up which is causing me to have blanks. Something is wrong
-  somewhere. First fix seperating nats-server start and stop, use cron and python to send
-  signal to start and stop server.
+QUALITY OF LIFE CHANGES
+----------------------------------------------------------------------------------
 
 - Need to create alphabetical and size ordered dropdown, be able to copy from outside clipboard
   into text box, create a kill all threads but selected button, fix having to double click on
   conversation when app starts, possibly redo layout of text box for a better look (move it to 
-  the right of the button bar), make arrow keys work for paginating through output.  
+  the right of the button bar), make arrow keys work for paginating through output. Fix text input box so that I can paste into it and so that its larger, also make 
+  shift + enter give me a new line. 
