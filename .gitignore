@@ -6,6 +6,7 @@
 *.json
 *.env
 *.conf
+*.db
 
 
 AI-cluster
