@@ -17,12 +17,12 @@ func ConnectToNats() (nats.JetStreamContext, error) {
 
 	// Connect to NATS with retry
 	for i := 0; i < 5; i++ {
-		nc, err = nats.Connect(constants.NatsURL, nats.Timeout(5*time.Second))
+		nc, err = nats.Connect(constants.NatsURL, nats.Timeout(2*time.Second))
 		if err == nil {
 			break
 		}
 		log.Printf("Failed to connect to NATS (attempt %d): %v", i+1, err)
-		time.Sleep(2 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 	if err != nil {
 		return nil, err

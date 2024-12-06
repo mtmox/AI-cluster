@@ -24,4 +24,5 @@ const (
 var (
 	// ModelsOutputFile is the path to the output JSON file
 	ModelsOutputFile = filepath.Join(os.ExpandEnv("$HOME"), "AI-cluster", "constants", "models.json")
+	ErrorDatabase = filepath.Join(os.ExpandEnv("$HOME"), "AI-cluster", "node", "errors.db")
 )

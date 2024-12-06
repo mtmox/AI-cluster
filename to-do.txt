@@ -121,3 +121,8 @@
   the messages are picking them up which is causing me to have blanks. Something is wrong
   somewhere. First fix seperating nats-server start and stop, use cron and python to send
   signal to start and stop server.
+
+- Need to create alphabetical and size ordered dropdown, be able to copy from outside clipboard
+  into text box, create a kill all threads but selected button, fix having to double click on
+  conversation when app starts, possibly redo layout of text box for a better look (move it to 
+  the right of the button bar), make arrow keys work for paginating through output.  

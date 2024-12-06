@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	
@@ -14,6 +15,7 @@ import (
 	"github.com/mtmox/AI-cluster/nats_server"
 	"github.com/mtmox/AI-cluster/frontend"
 	"github.com/mtmox/AI-cluster/backend"
+	"github.com/mtmox/AI-cluster/node"
 )
 
 func main() {
@@ -55,23 +57,25 @@ func runFrontend(logger *log.Logger) {
 
 	logger.Println("Starting frontend instance")
 	frontend.StartFrontend(js, logger)
+	time.Sleep(1 * time.Second)
 }
 
 func runBackend(logger *log.Logger) {
 	// Connect to NATS server and get the JetStream context
 	js, err := nats_server.ConnectToNats()
 	if err != nil {
-		logger.Fatalf("Failed to connect to NATS: %v", err)
+		node.HandleError(err, node.FATAL, "Failed to connect to NATS")
 	}
 
 	// Sync models without storing the return value
 	_, err = syncModels(js, logger)
 	if err != nil {
-		logger.Fatalf("Error syncing models: %v", err)
+		node.HandleError(err, node.FATAL, "Error syncing models")
 	}
 
 	logger.Println("Starting backend instance")
 	backend.StartBackend(js, logger)
+	time.Sleep(1 * time.Second)
 }
 
 func syncModels(js nats.JetStreamContext, logger *log.Logger) ([]string, error) {

@@ -5,6 +5,7 @@ go 1.22.5
 require (
 	fyne.io/fyne/v2 v2.5.2
 	github.com/fatih/color v1.7.0
+	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/nats-io/nats.go v1.37.0
 	github.com/shirou/gopsutil/v3 v3.24.5
 )
