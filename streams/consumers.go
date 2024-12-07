@@ -5,10 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/mtmox/AI-cluster/node"
 )
 
 func DurablePull(js nats.JetStreamContext, streamName string, subject string, durable string, callback func(msg *nats.Msg)) (*nats.Subscription, error) {
@@ -21,12 +21,14 @@ func DurablePull(js nats.JetStreamContext, streamName string, subject string, du
 
 	_, err := js.AddConsumer(streamName, consumerConfig)
 	if err != nil && err != nats.ErrConsumerNameAlreadyInUse {
+		node.HandleError(err, node.ERROR, fmt.Sprintf("Failed to add consumer for subject %s", subject))
 		return nil, fmt.Errorf("failed to add consumer: %v", err)
 	}
 
 	// Use pull-based subscription
 	subscription, err := js.PullSubscribe(subject, durable, nats.BindStream(streamName))
 	if err != nil {
+		node.HandleError(err, node.ERROR, fmt.Sprintf("Failed to create pull subscription for subject %s", subject))
 		return nil, fmt.Errorf("failed to create pull subscription: %v", err)
 	}
 
@@ -35,42 +37,42 @@ func DurablePull(js nats.JetStreamContext, streamName string, subject string, du
 		for {
 			messages, err := subscription.Fetch(1, nats.MaxWait(100*time.Millisecond))
 			if err != nil {
-				// log.Printf("Error fetching message: %v", err)
+				if err != nats.ErrTimeout {
+					node.HandleError(err, node.WARNING, fmt.Sprintf("Error fetching message for subject %s", subject))
+				}
 				continue
 			}
 			for _, msg := range messages {
 				callback(msg)
 				// Acknowledge the message after processing
 				if err := msg.Ack(); err != nil {
-					log.Printf("Error acknowledging message: %v", err)
+					node.HandleError(err, node.WARNING, fmt.Sprintf("Error acknowledging message for subject %s", subject))
 				}
 			}
 		}
 	}()
 
-	log.Printf("Consumer setup complete for subject: %s", subject)
-
+	node.HandleError(nil, node.SUCCESS, fmt.Sprintf("Consumer setup complete for subject: %s", subject))
 	return subscription, nil
 }
 
 func EphemeralPull(js nats.JetStreamContext, streamName string, subject string, callback func(msg *nats.Msg)) (*nats.Subscription, error) {
-	// Use pull-based subscription with an ephemeral consumer
 	subscription, err := js.PullSubscribe(subject, "", nats.BindStream(streamName))
 	if err != nil {
+		node.HandleError(err, node.ERROR, fmt.Sprintf("Failed to create ephemeral pull subscription for subject %s", subject))
 		return nil, fmt.Errorf("failed to create ephemeral pull subscription: %v", err)
 	}
 
-	// Start a goroutine to fetch messages
 	go func() {
 		for {
 			messages, err := subscription.Fetch(1, nats.MaxWait(1*time.Second))
 			if err != nil {
 				if err == nats.ErrTimeout {
-					log.Printf("No more messages for subject %s, stopping consumer", subject)
+					node.HandleError(nil, node.INFO, fmt.Sprintf("No more messages for subject %s, stopping consumer", subject))
 					subscription.Unsubscribe()
 					return
 				}
-				log.Printf("Error fetching message: %v", err)
+				node.HandleError(err, node.WARNING, fmt.Sprintf("Error fetching message for subject %s", subject))
 				continue
 			}
 			for _, msg := range messages {
@@ -79,13 +81,10 @@ func EphemeralPull(js nats.JetStreamContext, streamName string, subject string, 
 		}
 	}()
 
-	log.Printf("Ephemeral consumer setup complete for subject: %s", subject)
-
+	node.HandleError(nil, node.SUCCESS, fmt.Sprintf("Ephemeral consumer setup complete for subject: %s", subject))
 	return subscription, nil
 }
 
-// DurableGroupPull creates a durable queue group consumer that allows all consumers to read headers
-// but only process messages they're capable of handling
 func DurableGroupPull(
 	js nats.JetStreamContext,
 	streamName string,
@@ -94,7 +93,6 @@ func DurableGroupPull(
 	queueGroup string,
 	callback func(msg *nats.Msg) bool,
 ) (*nats.Subscription, error) {
-	// Create consumer configuration
 	consumerConfig := &nats.ConsumerConfig{
 		Durable:       durableName,
 		DeliverGroup:  queueGroup,
@@ -102,82 +100,79 @@ func DurableGroupPull(
 		FilterSubject: subject,
 		DeliverPolicy: nats.DeliverAllPolicy,
 		MaxDeliver:    -1,
-		AckWait:       30 * time.Second, // Increased AckWait time
+		AckWait:       30 * time.Second,
 	}
 
-	// Create or get the consumer
 	consumer, err := js.ConsumerInfo(streamName, durableName)
 	if consumer == nil {
 		_, err = js.AddConsumer(streamName, consumerConfig)
 		if err != nil && err != nats.ErrConsumerNameAlreadyInUse {
+			node.HandleError(err, node.ERROR, fmt.Sprintf("Failed to add consumer for subject %s", subject))
 			return nil, fmt.Errorf("failed to add consumer: %v", err)
 		}
 	}
 
-	// Create pull subscription with queue group
 	subscription, err := js.PullSubscribe(
 		subject,
 		queueGroup,
 		nats.BindStream(streamName),
 	)
 	if err != nil {
+		node.HandleError(err, node.ERROR, fmt.Sprintf("Failed to create pull subscription for subject %s", subject))
 		return nil, fmt.Errorf("failed to create pull subscription: %v", err)
 	}
 
-	log.Printf("Queue group consumer setup complete for subject: %s, queue group: %s", subject, queueGroup)
+	node.HandleError(nil, node.SUCCESS, fmt.Sprintf("Queue group consumer setup complete for subject: %s, queue group: %s", subject, queueGroup))
 	return subscription, nil
 }
 
-// SetupPushConsumer sets up a push-based consumer for the given stream and subject
 func DurablePush(js nats.JetStreamContext, streamName string, subject string, durable string, callback func(msg *nats.Msg)) (*nats.Subscription, error) {
-	
-	subjectHash := hash(subject) 
+	subjectHash := hash(subject)
 
 	consumerConfig := &nats.ConsumerConfig{
-		Durable:       durable,
-		AckPolicy:     nats.AckExplicitPolicy,
-		FilterSubject: subject,
-		DeliverPolicy: nats.DeliverAllPolicy,
-		DeliverSubject: fmt.Sprintf("%s.%s", subjectHash, durable), // Create a unique delivery subject
+		Durable:        durable,
+		AckPolicy:      nats.AckExplicitPolicy,
+		FilterSubject:  subject,
+		DeliverPolicy:  nats.DeliverAllPolicy,
+		DeliverSubject: fmt.Sprintf("%s.%s", subjectHash, durable),
 	}
 
 	_, err := js.AddConsumer(streamName, consumerConfig)
 	if err != nil && err != nats.ErrConsumerNameAlreadyInUse {
+		node.HandleError(err, node.ERROR, fmt.Sprintf("Failed to add consumer for subject %s", subject))
 		return nil, fmt.Errorf("failed to add consumer: %v", err)
 	}
 
-	// Use push-based subscription
 	subscription, err := js.Subscribe(consumerConfig.FilterSubject, func(msg *nats.Msg) {
 		callback(msg)
 	}, nats.Durable(durable), nats.BindStream(streamName))
 
 	if err != nil {
+		node.HandleError(err, node.ERROR, fmt.Sprintf("Failed to create push subscription for subject %s", subject))
 		return nil, fmt.Errorf("failed to create push subscription: %v", err)
 	}
 
-	log.Printf("Push-based consumer setup complete for subject: %s", subject)
-
+	node.HandleError(nil, node.SUCCESS, fmt.Sprintf("Push-based consumer setup complete for subject: %s", subject))
 	return subscription, nil
 }
 
 func EphemeralPush(js nats.JetStreamContext, streamName string, subject string, callback func(msg *nats.Msg)) (*nats.Subscription, error) {
-	// Use pull-based subscription with an ephemeral consumer
 	subscription, err := js.PullSubscribe(subject, "", nats.BindStream(streamName))
 	if err != nil {
+		node.HandleError(err, node.ERROR, fmt.Sprintf("Failed to create ephemeral pull subscription for subject %s", subject))
 		return nil, fmt.Errorf("failed to create ephemeral pull subscription: %v", err)
 	}
 
-	// Start a goroutine to fetch messages
 	go func() {
 		for {
 			messages, err := subscription.Fetch(1, nats.MaxWait(1*time.Second))
 			if err != nil {
 				if err == nats.ErrTimeout {
-					log.Printf("No more messages for subject %s, stopping consumer", subject)
+					node.HandleError(nil, node.INFO, fmt.Sprintf("No more messages for subject %s, stopping consumer", subject))
 					subscription.Unsubscribe()
 					return
 				}
-				log.Printf("Error fetching message: %v", err)
+				node.HandleError(err, node.WARNING, fmt.Sprintf("Error fetching message for subject %s", subject))
 				continue
 			}
 			for _, msg := range messages {
@@ -186,26 +181,15 @@ func EphemeralPush(js nats.JetStreamContext, streamName string, subject string, 
 		}
 	}()
 
-	log.Printf("Ephemeral consumer setup complete for subject: %s", subject)
-
+	node.HandleError(nil, node.SUCCESS, fmt.Sprintf("Ephemeral consumer setup complete for subject: %s", subject))
 	return subscription, nil
 }
 
-// hash takes a subject string, hashes it, and returns an alphanumeric output
 func hash(subject string) string {
-	// Create a new SHA256 hash
 	hasher := sha256.New()
-	
-	// Write the subject to the hasher
 	hasher.Write([]byte(subject))
-	
-	// Get the hash sum as bytes
 	hashBytes := hasher.Sum(nil)
-	
-	// Convert the hash to a hex string
 	hashHex := hex.EncodeToString(hashBytes)
-	
-	// Take the first 16 characters of the hex string to keep it shorter
 	return hashHex[:16]
 }
 

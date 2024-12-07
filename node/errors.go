@@ -25,6 +25,7 @@ const (
 	WARNING
 	ERROR
 	FATAL
+	SUCCESS
 )
 
 // CustomError represents our standardized error type
@@ -214,7 +215,8 @@ func New(level ErrorLevel, message string, err error) *CustomError {
 
 // HandleError is a convenience function for handling errors inline
 func HandleError(err error, level ErrorLevel, message string) {
-	if err != nil {
+	// Always create a CustomError for SUCCESS level, regardless of err
+	if level == SUCCESS || err != nil {
 		file, function, line := getCallerInfo(2)
 		
 		customErr := &CustomError{
@@ -288,8 +290,6 @@ func (e *CustomError) Log() {
 		sourceLogger.Printf("%s", logMessage)
 	}
 
-	
-
 	if e.Level == FATAL {
 		os.Exit(1)
 	}
@@ -306,6 +306,8 @@ func (l ErrorLevel) String() string {
 		return "ERROR"
 	case FATAL:
 		return "FATAL"
+	case SUCCESS:
+		return "SUCCESS"	
 	default:
 		return "UNKNOWN"
 	}

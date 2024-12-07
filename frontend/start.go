@@ -10,8 +10,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/nats-io/nats.go"
-
-	"github.com/mtmox/AI-cluster/backend"
 )
 
 // Add this global variable
@@ -36,7 +34,6 @@ func StartFrontend(js nats.JetStreamContext, logger *log.Logger) {
 	w.Resize(fyne.NewSize(1536, 1152))
 	configSyncModels(js, logger)
 	consumeOutChatMessages(js, logger)
-	backend.ProcessMessage(js, logger)
 	w.ShowAndRun()
 }
 
