@@ -4,6 +4,26 @@
 DB_PATH="$HOME/AI-cluster/node/errors.db"
 ROOT_DIR="$HOME/AI-cluster/"
 
+# List of log files to clear instead of process
+CLEAR_LOGS=(
+    "$HOME/AI-cluster/nats_server/flag.log"
+    "$HOME/AI-cluster/nats_server/nats-server.log"
+    "$HOME/AI-cluster/setup/check_update.log"
+    "$HOME/AI-cluster/setup/start_node.log"
+    "$HOME/AI-cluster/setup/stop_node.log"
+)
+
+# Function to check if file should be cleared
+should_clear_file() {
+    local file="$1"
+    for clear_file in "${CLEAR_LOGS[@]}"; do
+        if [ "$(realpath "$file")" = "$(realpath "$clear_file")" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 # Function to decode base64
 decode_base64() {
     echo "$1" | base64 -d
@@ -59,6 +79,13 @@ process_log_file() {
     
     echo "Processing: $file"
     
+    # Check if file should be cleared instead of processed
+    if should_clear_file "$file"; then
+        echo "Clearing file: $file"
+        : > "$file"  # This erases the contents of the file
+        return
+    fi
+    
     # Process file line by line
     while IFS= read -r line; do
         if [[ $line == \** && $line == *\* ]]; then
@@ -80,12 +107,12 @@ main() {
     if ! command -v sqlite3 &> /dev/null; then
         echo "Error: sqlite3 is required but not installed"
         exit 1
-    fi  # Added missing 'fi'
+    fi  # Added missing closing brace here
     
     # Process all .log files recursively
-    while IFS= read -r -d '' file; do
+    find "$ROOT_DIR" -type f -name "*.log" | while IFS= read -r file; do
         process_log_file "$file"
-    done < <(find "$ROOT_DIR" -type f -name "*.log" -print0)
+    done
     
     echo "Log cleaning completed successfully"
 }
