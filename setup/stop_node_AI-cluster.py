@@ -57,7 +57,5 @@ def run_stop_script():
         logging.error(f"Error executing stop script: {e}")
 
 if __name__ == "__main__":
-    if not is_server():
-        check_stop_flag()
-    else:
-        logging.info("Script running on server, skipping execution")
+    check_stop_flag()
+
