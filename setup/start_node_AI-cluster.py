@@ -57,7 +57,5 @@ def run_start_script():
         logging.error(f"Error executing start script: {e}")
 
 if __name__ == "__main__":
-    if not is_server():
-        check_start_flag()
-    else:
-        logging.info("Script running on server, skipping execution")
+    check_start_flag()
+
