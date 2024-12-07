@@ -3,7 +3,6 @@ package frontend
 
 import (
 	"strconv"
-	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -13,6 +12,7 @@ import (
 	"github.com/nats-io/nats.go"
 	
 	"github.com/mtmox/AI-cluster/constants"
+	"github.com/mtmox/AI-cluster/node"
 )
 
 var selectedThreadID int = -1
@@ -344,14 +344,16 @@ func sendMessage(js nats.JetStreamContext, messageBar *widget.Entry, conversatio
                         promptSelector.Selected,
                     )
                     if err != nil {
-                        log.Printf("Error formatting message for NATS: %v", err)
+                        node.HandleError(err, node.ERROR, "Error formatting message for NATS")
                         continue
                     }
                     
                     if js != nil {
                         err = sendMessageToNATS(js, natsMsg)
                         if err != nil {
-                            log.Printf("Error sending message to NATS: %v", err)
+                            node.HandleError(err, node.ERROR, "Error sending message to NATS")
+                        } else {
+                            node.HandleError(nil, node.SUCCESS, "Message successfully sent to NATS")
                         }
                     }
                 }
@@ -373,11 +375,13 @@ func sendMessage(js nats.JetStreamContext, messageBar *widget.Entry, conversatio
                         promptSelector.Selected,
                     )
                     if err != nil {
-                        log.Printf("Error formatting message for NATS: %v", err)
+                        node.HandleError(err, node.ERROR, "Error formatting message for NATS")
                     } else if js != nil {
                         err = sendMessageToNATS(js, natsMsg)
                         if err != nil {
-                            log.Printf("Error sending message to NATS: %v", err)
+                            node.HandleError(err, node.ERROR, "Error sending message to NATS")
+                        } else {
+                            node.HandleError(nil, node.SUCCESS, "Message successfully sent to NATS")
                         }
                     }
                 }

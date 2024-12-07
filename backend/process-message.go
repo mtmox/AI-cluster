@@ -15,6 +15,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/mtmox/AI-cluster/streams"
 	"github.com/mtmox/AI-cluster/constants"
+	"github.com/mtmox/AI-cluster/node"
 )
 
 // ChatMessage represents the structure for chat messages
@@ -63,12 +64,12 @@ var (
 
 func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 	if err := nodeConfig(); err != nil {
-		logger.Printf("Failed to create node config: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to create node config")
 		return
 	}
 
 	if err := LoadNodeSettings(); err != nil {
-		logger.Printf("Failed to load node settings: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to load node settings")
 		return
 	}
 
@@ -78,7 +79,7 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 
 	modelsInfo, err := constants.ReadModelsInfo(constants.ModelsOutputFile)
 	if err != nil {
-		logger.Printf("Failed to read models info: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to read models info")
 		return
 	}
 
@@ -87,13 +88,13 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 
 	messageHandler := func(msg *nats.Msg) bool {
 		if msg.Header == nil {
-			logger.Printf("Message without headers, skipping")
+			node.HandleError(nil, node.WARNING, "Message without headers, skipping")
 			return false
 		}
 
 		modelName := msg.Header.Get("model")
 		if modelName == "" {
-			logger.Printf("Message without model header, skipping")
+			node.HandleError(nil, node.WARNING, "Message without model header, skipping")
 			return false
 		}
 
@@ -107,7 +108,7 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 		}
 
 		if !hasModel {
-			logger.Printf("Model %s not found in local models, skipping", modelName)
+			node.HandleError(nil, node.WARNING, fmt.Sprintf("Model %s not found in local models, skipping", modelName))
 			return false
 		}
 
@@ -117,19 +118,20 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 			defer wg.Done()
 			defer FinishProcessing()
 
-			logger.Printf("Processing message for model: %s", modelName)
-			logger.Printf(incomingColor("Incoming Message Data: %s"), string(msg.Data))
+			node.HandleError(nil, node.INFO, fmt.Sprintf("Processing message for model: %s", modelName))
+			node.HandleError(nil, node.INFO, fmt.Sprintf("Incoming Message Data: %s", string(msg.Data)))
 
 			response, convID, threadID, err := sendToLLM(msg.Data, logger)
 			if err != nil {
-				logger.Printf("Error processing message with LLM: %v", err)
+				node.HandleError(err, node.ERROR, "Error processing message with LLM")
 				return
 			}
-			logger.Printf("%s [ConvID: %s, ThreadID: %d] %s",
+			
+			node.HandleError(nil, node.SUCCESS, fmt.Sprintf("%s [ConvID: %s, ThreadID: %d] %s",
 				idColor("Response"),
 				idColor(convID),
 				idColor(threadID),
-				responseColor(response))
+				responseColor(response)))
 
 			natsMsg := &NATSMessage{
 				ConversationID: convID,
@@ -138,7 +140,7 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 			}
 
 			if err := publishMessage(js, natsMsg); err != nil {
-				logger.Printf("Error publishing message to NATS: %v", err)
+				node.HandleError(err, node.ERROR, "Error publishing message to NATS")
 				return
 			}
 		}()
@@ -155,7 +157,8 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 		messageHandler,
 	)
 	if err != nil {
-		logger.Fatalf("Failed to create durable group pull subscription: %v", err)
+		node.HandleError(err, node.FATAL, "Failed to create durable group pull subscription")
+		return
 	}
 
 	// Start a goroutine for message processing
@@ -169,7 +172,7 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 				if availableSlots > 0 {
 					err := FetchMessages(subscription, messageHandler, max_fetch_messages)
 					if err != nil {
-						logger.Printf("Error fetching messages: %v", err)
+						node.HandleError(err, node.ERROR, "Error fetching messages")
 					}
 				}
 			}
@@ -177,7 +180,6 @@ func ProcessMessage(js nats.JetStreamContext, logger *log.Logger) {
 	}()
 }
 
-// GetAvailableProcessingSlots returns the number of available processing slots
 func GetAvailableProcessingSlots() int {
 	tasksLock.Lock()
 	defer tasksLock.Unlock()
@@ -192,7 +194,6 @@ func GetAvailableProcessingSlots() int {
 	return available
 }
 
-// FetchMessages attempts to fetch and process multiple messages up to the specified limit
 func FetchMessages(subscription *nats.Subscription, callback func(msg *nats.Msg) bool, limit int) error {
 	messages, err := subscription.Fetch(limit)
 	if err != nil {
@@ -231,14 +232,14 @@ func sendToLLM(messageData []byte, logger *log.Logger) (string, string, int, err
 
 	modelManager := GetModelManager()
 	if err := modelManager.CheckAndUnloadModels(incomingMsg.Model); err != nil {
-		logger.Printf("Warning: Error checking/unloading models: %v", err)
+		node.HandleError(err, node.WARNING, "Warning: Error checking/unloading models")
 	}
 
-	logger.Printf("%s [ConvID: %s, ThreadID: %d] %+v",
+	node.HandleError(nil, node.INFO, fmt.Sprintf("%s [ConvID: %s, ThreadID: %d] %+v",
 		idColor("Parsed Incoming Message:"),
 		idColor(incomingMsg.ConversationID),
 		idColor(incomingMsg.ThreadID),
-		incomingMsg)
+		incomingMsg))
 
 	messages := make([]ChatMessage, 0)
 
@@ -262,7 +263,7 @@ func sendToLLM(messageData []byte, logger *log.Logger) (string, string, int, err
 		return "", "", 0, fmt.Errorf("failed to marshal chat request: %v", err)
 	}
 
-	logger.Printf("Sending request to Ollama: %s", string(requestBody))
+	node.HandleError(nil, node.INFO, fmt.Sprintf("Sending request to Ollama: %s", string(requestBody)))
 
 	resp, err := http.Post(constants.ChatEndpoint, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {

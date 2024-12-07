@@ -4,13 +4,13 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/mtmox/AI-cluster/constants"
+	"github.com/mtmox/AI-cluster/node"
 )
 
 // LoadedModelInfo represents information about a loaded model
@@ -59,21 +59,23 @@ func GetModelManager() *ModelManager {
 func (mm *ModelManager) GetLoadedModels() ([]*LoadedModelInfo, error) {
 	resp, err := http.Get(constants.LoadedModels)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get loaded models: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to get loaded models")
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to read response body")
+		return nil, err
 	}
 
-	// Print the raw response for debugging
-	fmt.Printf("Raw response from Ollama API: %s\n", string(body))
+	node.HandleError(nil, node.INFO, "Raw response from Ollama API: "+string(body))
 
 	var modelResp ModelResponse
 	if err := json.Unmarshal(body, &modelResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to unmarshal response")
+		return nil, err
 	}
 
 	mm.mutex.Lock()
@@ -111,12 +113,14 @@ func (mm *ModelManager) UnloadModel(modelName string) error {
 
 	requestBody, err := json.Marshal(request)
 	if err != nil {
-		return fmt.Errorf("failed to marshal unload request: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to marshal unload request")
+		return err
 	}
 
 	resp, err := http.Post(constants.ChatEndpoint, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
-		return fmt.Errorf("failed to send unload request: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to send unload request")
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -129,30 +133,31 @@ func (mm *ModelManager) UnloadModel(modelName string) error {
 
 // CheckAndUnloadModels checks if we need to unload any models before loading a new one
 func (mm *ModelManager) CheckAndUnloadModels(requestedModel string) error {
-	fmt.Printf("Checking and potentially unloading models for requested model: %s\n", requestedModel)
-	fmt.Printf("Current maximum allowed models: %d\n", mm.maxModels)
+	node.HandleError(nil, node.INFO, "Checking and potentially unloading models for requested model: "+requestedModel)
+	node.HandleError(nil, node.INFO, "Current maximum allowed models: "+string(mm.maxModels))
 
 	loadedModels, err := mm.GetLoadedModels()
 	if err != nil {
-		return fmt.Errorf("failed to get loaded models: %v", err)
+		node.HandleError(err, node.ERROR, "Failed to get loaded models")
+		return err
 	}
 
-	fmt.Printf("Currently loaded models count: %d\n", len(loadedModels))
+	node.HandleError(nil, node.INFO, "Currently loaded models count: "+string(len(loadedModels)))
 	for _, model := range loadedModels {
-		fmt.Printf("Loaded model: %s, Last used: %s\n", model.Model, model.LastUsed)
+		node.HandleError(nil, node.INFO, "Loaded model: "+model.Model+", Last used: "+model.LastUsed.String())
 	}
 
 	// If the requested model is already loaded, no need to unload anything
 	for _, model := range loadedModels {
 		if model.Model == requestedModel {
-			fmt.Printf("Requested model %s is already loaded, no unloading needed\n", requestedModel)
+			node.HandleError(nil, node.INFO, "Requested model "+requestedModel+" is already loaded, no unloading needed")
 			return nil
 		}
 	}
 
 	// If we have reached the maximum number of loaded models, unload the least recently used
 	if len(loadedModels) >= mm.maxModels {
-		fmt.Printf("Maximum number of models reached (%d), looking for least recently used model to unload\n", mm.maxModels)
+		node.HandleError(nil, node.INFO, "Maximum number of models reached ("+string(mm.maxModels)+"), looking for least recently used model to unload")
 		
 		var oldestModel *LoadedModelInfo
 		for _, model := range loadedModels {
@@ -162,14 +167,15 @@ func (mm *ModelManager) CheckAndUnloadModels(requestedModel string) error {
 		}
 
 		if oldestModel != nil {
-			fmt.Printf("Unloading least recently used model: %s (Last used: %s)\n", oldestModel.Model, oldestModel.LastUsed)
+			node.HandleError(nil, node.INFO, "Unloading least recently used model: "+oldestModel.Model+" (Last used: "+oldestModel.LastUsed.String()+")")
 			if err := mm.UnloadModel(oldestModel.Model); err != nil {
-				return fmt.Errorf("failed to unload model %s: %v", oldestModel.Model, err)
+				node.HandleError(err, node.ERROR, "Failed to unload model "+oldestModel.Model)
+				return err
 			}
-			fmt.Printf("Successfully unloaded model: %s\n", oldestModel.Model)
+			node.HandleError(nil, node.SUCCESS, "Successfully unloaded model: "+oldestModel.Model)
 		}
 	} else {
-		fmt.Printf("No need to unload any models, current count (%d) is below maximum (%d)\n", len(loadedModels), mm.maxModels)
+		node.HandleError(nil, node.INFO, "No need to unload any models, current count ("+string(len(loadedModels))+") is below maximum ("+string(mm.maxModels)+")")
 	}
 
 	return nil
