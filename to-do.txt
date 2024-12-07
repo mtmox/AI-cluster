@@ -28,6 +28,11 @@ WORKING ON
 URGENT NEEDS ATTENTION
 ----------------------------------------------------------------------------------
 
+- In my setup dir once the start and stop node .py files have started the subprocess
+  we need to modify the start and stop .sh files so that they just start the go and 
+  dont block. Right now the subprocess in the .py file is blocking because the .sh 
+  file is waiting for the go program to complete. This is wrong. Non of it should 
+  be blocking. Fix all .py and .sh files for start and stop in setup dir.
  
 
 ----------------------------------------------------------------------------------
